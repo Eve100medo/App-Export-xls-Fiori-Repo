@@ -1,0 +1,18 @@
+@AbapCatalog.sqlViewName: 'ZFICOMPANYVH3'
+@AbapCatalog.compiler.compareFilter: true
+@AbapCatalog.preserveKey: true
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Value Help COMPANY'
+@Metadata.ignorePropagatedAnnotations: true
+define view Z_FI_COMPANY_VH_3
+ as select distinct from I_GLAccountLineItemRawData as gl
+    inner join            I_CompanyCode              as cc on gl.CompanyCode = cc.CompanyCode
+{
+     key gl.CompanyCode     as s_compy,
+      gl.SourceLedger    as s_ledger,
+      cc.CompanyCodeName as CompanyName, // Nome da Empresa
+      cc.CityName        as City,        // Cidade
+      cc.Country         as Country,     // País
+      cc.Currency        as Currency,    // Moeda
+      cc.Language        as Language     // Idioma
+}

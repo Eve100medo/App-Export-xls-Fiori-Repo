@@ -1,0 +1,55 @@
+FUNCTION ZFM_EXPORT_XLS_2.
+*"--------------------------------------------------------------------
+*"*"Interface local:
+*"  EXPORTING
+*"     REFERENCE(E_BYTECOUNT) TYPE  I
+*"     REFERENCE(E_FULL_PATH) TYPE  STRING
+*"     REFERENCE(E_BUFFER) TYPE  XSTRING
+*"  TABLES
+*"      ET_FILE_TAB TYPE  SOLIX_TAB
+*"  CHANGING
+*"     REFERENCE(S_COMPY_C) TYPE  STRING
+*"     REFERENCE(S_GLACT_C) TYPE  STRING
+*"     REFERENCE(S_LEDGER_C) TYPE  STRING
+*"     REFERENCE(S_PSDAT_C) TYPE  STRING
+*"     REFERENCE(S_STATUS_C) TYPE  STRING
+*"--------------------------------------------------------------------
+
+  DATA:
+    s_compy_stg  TYPE string,
+    s_glact_stg  TYPE string,
+    s_ledger_stg TYPE string,
+    s_psdat_stg  TYPE string,
+    s_status_stg TYPE string.
+
+  IMPORT: s_compy_stg    TO s_compy_stg   FROM MEMORY ID 'S_COMPY_STG'.
+  IMPORT: s_glact_stg    TO s_glact_stg   FROM MEMORY ID 'S_GLACT_STG'.
+  IMPORT: s_ledger_stg   TO s_ledger_stg  FROM MEMORY ID 'S_LEDGER_STG'.
+  IMPORT: s_psdat_stg    TO s_psdat_stg   FROM MEMORY ID 'S_PSDAT_STG'.
+  IMPORT: s_status_stg   TO s_status_stg  FROM MEMORY ID 'S_STATUS_STG'.
+
+  IF s_compy_c IS NOT INITIAL.
+    s_compy  =  s_compy_c.
+  ENDIF.
+
+  IF s_glact_c IS NOT INITIAL.
+    s_glact  =  s_glact_c.
+  ENDIF.
+
+  IF s_ledger_c IS NOT INITIAL.
+    s_ledger =  s_ledger_c.
+  ENDIF.
+
+  IF  s_psdat_c IS NOT INITIAL.
+    s_psdat  =  s_psdat_c.
+  ENDIF.
+
+  IF s_status_c IS NOT INITIAL.
+    s_status =  s_status_c.
+  ENDIF.
+
+  PERFORM:
+  valida_range,
+  zf_ler_tabela TABLES ET_FILE_TAB CHANGING E_BYTECOUNT E_FULL_PATH E_BUFFER.
+
+ENDFUNCTION.

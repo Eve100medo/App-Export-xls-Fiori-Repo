@@ -1,0 +1,11 @@
+
+
+1 - Link do app com erro : https://vhprjs4qci.hec.petroriosa.com.br:44300/sap/bc/ui2/flp?sap-client=500&sap-language=PT#ZDBG_APPFIORI_1-display
+
+2 - Print do erro no navegador
+
+3 - Print na transação ST22
+
+4 - Print na transação /iwfnd/error_log (Log de erros)
+
+5 - Aplicação BSP

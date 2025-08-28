@@ -1,0 +1,28 @@
+@AbapCatalog.sqlViewName: 'ZFIIGLACCOUNTVH2'
+@AbapCatalog.compiler.compareFilter: true
+@AbapCatalog.preserveKey: true
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Value Help'
+//@Metadata.ignorePropagatedAnnotations: true
+define view Z_FI_I_GLACCOUNTLINEITEM_VH_02
+  as select from I_GLAccountLineItemRawData
+{
+      @UI.lineItem: [{ position: 10 }]
+  key SourceLedger                as s_leadr,
+      @UI.lineItem: [{ position: 20 }]
+  key CompanyCode                 as s_compy,
+      @UI.lineItem: [{ position: 30 }]
+  key FiscalYear                  as s_fiyer,
+      @UI.lineItem: [{ position: 40 }]
+  key AccountingDocument          as s_accdc,
+      @UI.lineItem: [{ position: 50 }]
+  key LedgerGLLineItem            as s_ledgl,
+      @UI.lineItem: [{ position: 60 }]
+      LedgerFiscalYear            as s_ldgfy,
+      @UI.lineItem: [{ position: 70 }]
+      GLAccount                   as s_glact,
+      @UI.lineItem: [{ position: 80 }]
+      PostingDate                 as s_psdat,
+      AmountInCompanyCodeCurrency as s_amincc,
+      DocumentItemText            as s_doctxt
+}

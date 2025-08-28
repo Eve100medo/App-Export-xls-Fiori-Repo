@@ -1,0 +1,9 @@
+request
+
+S4DK920674   App Fiori Export xls PRIO - 22/08
+
+S4DK920633   For ABAP repository ZDBG_APPFIORI_1, created by SAP Fiori...
+
+S4DK920688    Request Customizing OData
+
+S4DK920233     Tarefa customizing 08

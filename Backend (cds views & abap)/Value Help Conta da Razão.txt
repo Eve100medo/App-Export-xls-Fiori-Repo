@@ -1,0 +1,27 @@
+@AbapCatalog.sqlViewName: 'ZFIGLACCOUNTV3'
+@AbapCatalog.compiler.compareFilter: true
+@AbapCatalog.preserveKey: true
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Value Help GLACCOUNT'
+@Metadata.ignorePropagatedAnnotations: true
+define view Z_FI_GLACCOUNT_VH_3 as select from I_GLAccountLineItemRawData
+{
+      @UI.lineItem: [{ position: 10 }]
+  key GLAccount                   as s_glact,
+      @UI.lineItem: [{ position: 20 }]
+      CompanyCode                 as s_compy,
+      @UI.lineItem: [{ position: 30 }]
+      SourceLedger                as s_leadr,
+      @UI.lineItem: [{ position: 40 }]
+      FiscalYear                  as s_fiyer,
+      @UI.lineItem: [{ position: 50 }]
+      AccountingDocument          as s_accdc,
+      @UI.lineItem: [{ position: 60 }]
+      LedgerGLLineItem            as s_ledgl,
+      @UI.lineItem: [{ position: 70 }]
+      LedgerFiscalYear            as s_ldgfy,
+      @UI.lineItem: [{ position: 80 }]
+      PostingDate                 as s_psdat,
+      AmountInCompanyCodeCurrency as s_amincc,
+      DocumentItemText            as s_doctxt
+}

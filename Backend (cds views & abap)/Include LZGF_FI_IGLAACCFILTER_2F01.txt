@@ -1,0 +1,2873 @@
+*----------------------------------------------------------------------*
+***INCLUDE LZGF_FI_IGLAACCFILTERF01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form valida_range
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM valida_range .
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form zf_ler_tabela
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM zf_ler_tabela TABLES et_file_tab CHANGING e_bytecount e_full_path e_buffer.
+
+  DATA:
+    lt_tb               TYPE TABLE OF zme_cabec_xls,
+    ls_tb               TYPE zme_cabec_xls,
+    lt_line             TYPE TABLE OF string,
+    ls_line             TYPE string,
+    lv_file_table       TYPE string,
+    lv_rows             TYPE i,
+    lv_offset           TYPE i,
+    lv_tabix            TYPE sy-tabix,
+    lv_file_line        TYPE string,
+    lv_aux_char         TYPE numeric12,
+    lv_aux              TYPE string,
+    lv_valor            TYPE string,
+    lv_field_value(200),
+    ocl_cl_table        TYPE REF TO cl_abap_structdescr,
+    lv_field            TYPE abap_compdescr,
+    lv_is_key           TYPE flag,
+    lv_count_fields     TYPE i,
+    lt_ddfields         TYPE ddfields.
+
+  DATA: lv_data_format_low  TYPE char10,
+        lv_data_format_high TYPE char10.
+
+  DATA: lt_businessareatext  TYPE TABLE OF i_businessareatext,
+        lt_offsettingaccount TYPE TABLE OF i_offsettingaccount,
+        lt_profitcentertext  TYPE TABLE OF i_profitcentertext,
+        lt_costcentertext    TYPE TABLE OF i_costcentertext,
+        lt_companycode       TYPE TABLE OF i_companycode,
+
+        lv_offsettingaccount TYPE i_offsettingaccount-offsettingaccount,
+        lv_profitcenter      TYPE i_profitcentertext-profitcenter,
+        lv_costcenter        TYPE i_costcentertext-costcenter.
+
+
+
+  FIELD-SYMBOLS:
+    <line>  TYPE any,
+    <field> TYPE any.
+
+*********************************  s_ledger = ledger.
+  PERFORM process_filter.
+*********************************  PERFORM convert_date.
+
+  SELECT s_compy,
+         s_bussr,
+         s_psdat,
+         s_accdc,
+         s_glact,
+         s_glacln,
+         s_doctxt,
+         s_amincc,
+         s_comcr,
+         s_amtgc,
+         s_glocr,
+         s_amttr,
+         s_trncr,
+         s_acdoct,
+         s_postk,
+         s_partb,
+         s_profct,
+         s_costc,
+         s_suppl,
+         s_nsupl,
+         s_stblg,
+         s_offac,
+         s_acdcbu,
+         s_cpudt,
+         s_clerdt,
+         s_clrac,
+         s_ordid,
+         s_offat,
+         s_conta
+
+    FROM z_fi_i_glaccountlineitem
+    INTO TABLE @gt_data
+    WHERE s_ledger         IN @r_ledger
+    AND   s_compy          IN @r_compy
+    AND   s_glact          IN @r_glact
+    AND   s_psdat          IN @r_psdatf
+
+
+    AND s_amincc IN @r_amincc
+    AND s_txcode IN @r_txcode
+    AND s_clerdt IN @r_clerdt
+    AND s_profct IN @r_profct
+    AND s_doctxt IN @r_doctxt.
+
+
+  IF sy-subrc = 0.
+
+    SELECT *
+      FROM i_companycode
+      INTO TABLE @lt_companycode
+      FOR ALL ENTRIES IN @gt_data
+      WHERE  companycode = @gt_data-s_compy.
+
+
+    SELECT *
+      FROM i_offsettingaccount
+      INTO TABLE @lt_offsettingaccount
+      FOR ALL ENTRIES IN @gt_data
+      WHERE offsettingaccount     = @gt_data-s_offac
+        AND offsettingaccounttype = @gt_data-s_offat.
+
+
+    SELECT *
+      FROM i_businessareatext
+      INTO TABLE @lt_businessareatext
+      FOR ALL ENTRIES IN @gt_data
+      WHERE  businessarea = @gt_data-s_bussr.
+
+
+    SELECT *
+      FROM i_profitcentertext
+      INTO TABLE @lt_profitcentertext
+      FOR ALL ENTRIES IN @gt_data
+      WHERE  controllingarea = @gt_data-s_conta
+      AND    profitcenter    = @gt_data-s_profct.
+
+    SELECT *
+    FROM i_costcentertext
+    INTO TABLE @lt_costcentertext
+    FOR ALL ENTRIES IN @gt_data
+    WHERE  controllingarea = @gt_data-s_conta
+    AND    costcenter      = @gt_data-s_costc.
+
+
+    PERFORM  f_insert_header TABLES lt_tb.
+
+    IF lt_tb[] IS NOT INITIAL.
+      DELETE ADJACENT DUPLICATES FROM lt_tb COMPARING ALL FIELDS.
+      LOOP AT lt_tb ASSIGNING FIELD-SYMBOL(<fs_tb1>).
+        CLEAR ls_line.
+        CONCATENATE  <fs_tb1>-fieldname ';' <fs_tb1>-value ';' INTO ls_line.
+        APPEND ls_line TO lt_line.
+      ENDLOOP.
+      ls_line = ';'.
+      APPEND ls_line TO lt_line.
+      CLEAR lt_tb[].
+    ENDIF.
+
+
+    IF r_stats[] IS NOT INITIAL.
+      LOOP AT r_stats ASSIGNING FIELD-SYMBOL(<fs_stats>).
+        ls_tb-fieldname = 'Status'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_stats>-low <fs_stats>-high <fs_stats>-option.
+      ENDLOOP.
+    ENDIF.
+
+
+    IF r_ledger[] IS NOT INITIAL.
+      LOOP AT r_ledger ASSIGNING FIELD-SYMBOL(<fs_ledger>).
+        ls_tb-fieldname = 'Ledger'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_ledger>-low <fs_ledger>-high <fs_ledger>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_compy[] IS NOT INITIAL.
+      ls_tb-fieldname = 'Empresa'.
+      PERFORM f_insert_company TABLES lt_tb
+      USING ls_tb-fieldname.
+
+    ELSE.
+      " Adicionar o resultado final na tabela de saída
+      APPEND INITIAL LINE TO lt_tb ASSIGNING FIELD-SYMBOL(<fs_tb3>).
+      <fs_tb3>-fieldname = 'Empresa'.
+      <fs_tb3>-value = 'Todas Empresas.'.
+
+    ENDIF.
+
+    IF r_glact[] IS NOT INITIAL.
+      ls_tb-fieldname = 'Conta Razão'.
+      PERFORM f_insert_gla TABLES lt_tb
+      USING ls_tb-fieldname.
+
+    ELSE.
+      " Adicionar o resultado final na tabela de saída
+      APPEND INITIAL LINE TO lt_tb ASSIGNING FIELD-SYMBOL(<fs_tb2>).
+      <fs_tb2>-fieldname = 'Conta Razão'.
+      <fs_tb2>-value = 'Todas contas do Razão.'.
+
+    ENDIF.
+
+
+    IF r_postk[] IS NOT INITIAL.
+      LOOP AT r_postk ASSIGNING FIELD-SYMBOL(<fs_postk>).
+        ls_tb-fieldname = 'Postk'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_postk>-low <fs_postk>-high <fs_postk>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_asingr[] IS NOT INITIAL.
+      LOOP AT r_asingr ASSIGNING FIELD-SYMBOL(<fs_asingr>).
+        ls_tb-fieldname = 'asingr'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_asingr>-low <fs_asingr>-high <fs_asingr>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_acdoct[] IS NOT INITIAL.
+      LOOP AT r_acdoct ASSIGNING FIELD-SYMBOL(<fs_acdoct>).
+        ls_tb-fieldname = 'acdoct'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_acdoct>-low <fs_acdoct>-high <fs_acdoct>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_amincc[] IS NOT INITIAL.
+      LOOP AT r_amincc ASSIGNING FIELD-SYMBOL(<fs_amincc>).
+        ls_tb-fieldname = 'amincc'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_amincc>-low <fs_amincc>-high <fs_amincc>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_txcode[] IS NOT INITIAL.
+      LOOP AT r_txcode ASSIGNING FIELD-SYMBOL(<fs_txcode>).
+        ls_tb-fieldname = 'txcode'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_txcode>-low <fs_txcode>-high <fs_txcode>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_clerdt[] IS NOT INITIAL.
+      LOOP AT r_clerdt ASSIGNING FIELD-SYMBOL(<fs_clerdt>).
+        ls_tb-fieldname = 'clerdt'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_clerdt>-low <fs_clerdt>-high <fs_clerdt>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_profct[] IS NOT INITIAL.
+      LOOP AT r_profct ASSIGNING FIELD-SYMBOL(<fs_profct>).
+        ls_tb-fieldname = 'profct'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_profct>-low <fs_profct>-high <fs_profct>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_segmt[] IS NOT INITIAL.
+      LOOP AT r_segmt ASSIGNING FIELD-SYMBOL(<fs_segmt>).
+        ls_tb-fieldname = 'segmt'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_segmt>-low <fs_segmt>-high <fs_segmt>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_doctxt[] IS NOT INITIAL.
+      LOOP AT r_doctxt ASSIGNING FIELD-SYMBOL(<fs_doctxt>).
+        ls_tb-fieldname = 'doctxt'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_doctxt>-low <fs_doctxt>-high <fs_doctxt>-option.
+      ENDLOOP.
+    ENDIF.
+
+    IF r_psdatf[] IS NOT INITIAL.
+
+      LOOP AT r_psdatf ASSIGNING FIELD-SYMBOL(<fs_psdat>).
+        ls_tb-fieldname = 'Data aberto'.
+
+        IF <fs_psdat>-low IS NOT INITIAL.
+          WRITE <fs_psdat>-low TO lv_data_format_low.
+          REPLACE ALL OCCURRENCES OF '.' IN lv_data_format_low WITH '/'.
+        ENDIF.
+
+        IF <fs_psdat>-high IS NOT INITIAL.
+          WRITE <fs_psdat>-high TO lv_data_format_high.
+          REPLACE ALL OCCURRENCES OF '.' IN lv_data_format_high WITH '/'.
+        ENDIF.
+
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname lv_data_format_low lv_data_format_high <fs_psdat>-option.
+      ENDLOOP.
+
+    ENDIF.
+
+
+*****************************************************************************
+
+    IF r_conta[] IS NOT INITIAL.
+      LOOP AT r_conta ASSIGNING FIELD-SYMBOL(<fs_conta>).
+        ls_tb-fieldname = 'conta'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_conta>-low <fs_conta>-high <fs_conta>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_fintr[] IS NOT INITIAL.
+      LOOP AT r_fintr ASSIGNING FIELD-SYMBOL(<fs_fintr>).
+        ls_tb-fieldname = 'fintr'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_fintr>-low <fs_fintr>-high <fs_fintr>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_bustr[] IS NOT INITIAL.
+      LOOP AT r_bustr ASSIGNING FIELD-SYMBOL(<fs_bustr>).
+        ls_tb-fieldname = 'bustr'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_bustr>-low <fs_bustr>-high <fs_bustr>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_cobtr[] IS NOT INITIAL.
+      LOOP AT r_cobtr ASSIGNING FIELD-SYMBOL(<fs_cobtr>).
+        ls_tb-fieldname = 'cobtr'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_cobtr>-low <fs_cobtr>-high <fs_cobtr>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_refdt[] IS NOT INITIAL.
+      LOOP AT r_refdt ASSIGNING FIELD-SYMBOL(<fs_refdt>).
+        ls_tb-fieldname = 'refdt'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_refdt>-low <fs_refdt>-high <fs_refdt>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_logsy[] IS NOT INITIAL.
+      LOOP AT r_logsy ASSIGNING FIELD-SYMBOL(<fs_logsy>).
+        ls_tb-fieldname = 'logsy'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_logsy>-low <fs_logsy>-high <fs_logsy>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_refdc[] IS NOT INITIAL.
+      LOOP AT r_refdc ASSIGNING FIELD-SYMBOL(<fs_refdc>).
+        ls_tb-fieldname = 'refdc'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_refdc>-low <fs_refdc>-high <fs_refdc>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_refdo[] IS NOT INITIAL.
+      LOOP AT r_refdo ASSIGNING FIELD-SYMBOL(<fs_refdo>).
+        ls_tb-fieldname = 'refdo'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_refdo>-low <fs_refdo>-high <fs_refdo>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_refdi[] IS NOT INITIAL.
+      LOOP AT r_refdi ASSIGNING FIELD-SYMBOL(<fs_refdi>).
+        ls_tb-fieldname = 'refdi'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_refdi>-low <fs_refdi>-high <fs_refdi>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_refdg[] IS NOT INITIAL.
+      LOOP AT r_refdg ASSIGNING FIELD-SYMBOL(<fs_refdg>).
+        ls_tb-fieldname = 'refdg'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_refdg>-low <fs_refdg>-high <fs_refdg>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_trxsi[] IS NOT INITIAL.
+      LOOP AT r_trxsi ASSIGNING FIELD-SYMBOL(<fs_trxsi>).
+        ls_tb-fieldname = 'trxsi'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_trxsi>-low <fs_trxsi>-high <fs_trxsi>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_isrev[] IS NOT INITIAL.
+      LOOP AT r_isrev ASSIGNING FIELD-SYMBOL(<fs_isrev>).
+        ls_tb-fieldname = 'isrev'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_isrev>-low <fs_isrev>-high <fs_isrev>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_rvref[] IS NOT INITIAL.
+      LOOP AT r_rvref ASSIGNING FIELD-SYMBOL(<fs_rvref>).
+        ls_tb-fieldname = 'rvref'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_rvref>-low <fs_rvref>-high <fs_rvref>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_rvdoc[] IS NOT INITIAL.
+      LOOP AT r_rvdoc ASSIGNING FIELD-SYMBOL(<fs_rvdoc>).
+        ls_tb-fieldname = 'rvdoc'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_rvdoc>-low <fs_rvdoc>-high <fs_rvdoc>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_isset[] IS NOT INITIAL.
+      LOOP AT r_isset ASSIGNING FIELD-SYMBOL(<fs_isset>).
+        ls_tb-fieldname = 'isset'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_isset>-low <fs_isset>-high <fs_isset>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_isstl[] IS NOT INITIAL.
+      LOOP AT r_isstl ASSIGNING FIELD-SYMBOL(<fs_isstl>).
+        ls_tb-fieldname = 'isstl'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_isstl>-low <fs_isstl>-high <fs_isstl>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_prdct[] IS NOT INITIAL.
+      LOOP AT r_prdct ASSIGNING FIELD-SYMBOL(<fs_prdct>).
+        ls_tb-fieldname = 'prdct'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_prdct>-low <fs_prdct>-high <fs_prdct>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_prdco[] IS NOT INITIAL.
+      LOOP AT r_prdco ASSIGNING FIELD-SYMBOL(<fs_prdco>).
+        ls_tb-fieldname = 'prdco'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_prdco>-low <fs_prdco>-high <fs_prdco>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_prddo[] IS NOT INITIAL.
+      LOOP AT r_prddo ASSIGNING FIELD-SYMBOL(<fs_prddo>).
+        ls_tb-fieldname = 'prddo'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_prddo>-low <fs_prddo>-high <fs_prddo>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_prddi[] IS NOT INITIAL.
+      LOOP AT r_prddi ASSIGNING FIELD-SYMBOL(<fs_prddi>).
+        ls_tb-fieldname = 'prddi'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_prddi>-low <fs_prddi>-high <fs_prddi>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_prjcc[] IS NOT INITIAL.
+      LOOP AT r_prjcc ASSIGNING FIELD-SYMBOL(<fs_prjcc>).
+        ls_tb-fieldname = 'prjcc'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_prjcc>-low <fs_prjcc>-high <fs_prjcc>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_prjfy[] IS NOT INITIAL.
+      LOOP AT r_prjfy ASSIGNING FIELD-SYMBOL(<fs_prjfy>).
+        ls_tb-fieldname = 'prjfy'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_prjfy>-low <fs_prjfy>-high <fs_prjfy>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_prdje[] IS NOT INITIAL.
+      LOOP AT r_prdje ASSIGNING FIELD-SYMBOL(<fs_prdje>).
+        ls_tb-fieldname = 'prdje'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_prdje>-low <fs_prdje>-high <fs_prdje>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_prdji[] IS NOT INITIAL.
+      LOOP AT r_prdji ASSIGNING FIELD-SYMBOL(<fs_prdji>).
+        ls_tb-fieldname = 'prdji'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_prdji>-low <fs_prdji>-high <fs_prdji>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_srdct[] IS NOT INITIAL.
+      LOOP AT r_srdct ASSIGNING FIELD-SYMBOL(<fs_srdct>).
+        ls_tb-fieldname = 'srdct'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_srdct>-low <fs_srdct>-high <fs_srdct>-option.
+      ENDLOOP.
+    ENDIF.
+    IF r_srlog[] IS NOT INITIAL.
+      LOOP AT r_srlog ASSIGNING FIELD-SYMBOL(<fs_srlog>).
+        ls_tb-fieldname = 'srlog'.
+        PERFORM f_insert_zmtetest TABLES lt_tb
+        USING ls_tb-fieldname <fs_srlog>-low <fs_srlog>-high <fs_srlog>-option.
+      ENDLOOP.
+    ENDIF.
+
+
+*****************************************************************************
+
+    DATA: lt_order         TYPE TABLE OF string,
+          lt_columns       TYPE TABLE OF dd03vt,
+          lt_final_columns TYPE TABLE OF dd03vt,
+          ls_column        TYPE dd03vt.
+
+    APPEND 'S_COMPY'  TO lt_order.
+    APPEND 'S_BUSSR'  TO lt_order.
+    APPEND 'S_PSDAT'  TO lt_order.
+    APPEND 'S_ACCDC'  TO lt_order.
+    APPEND 'S_GLACT'  TO lt_order.
+    APPEND 'S_GLACLN' TO lt_order.
+    APPEND 'S_DOCTXT' TO lt_order.
+    APPEND 'S_AMINCC' TO lt_order.
+    APPEND 'S_COMCR'  TO lt_order.
+    APPEND 'S_AMTGC'  TO lt_order.
+    APPEND 'S_GLOCR'  TO lt_order.
+    APPEND 'S_AMTTR'  TO lt_order.
+    APPEND 'S_TRNCR'  TO lt_order.
+    APPEND 'S_ACDOCT' TO lt_order.
+    APPEND 'S_POSTK'  TO lt_order.
+    APPEND 'S_PARTB'  TO lt_order.
+    APPEND 'S_PROFCT' TO lt_order.
+    APPEND 'S_COSTC'  TO lt_order.
+    APPEND 'S_SUPPL'  TO lt_order.
+    APPEND 'S_NSUPL'  TO lt_order.
+    APPEND 'S_STBLG'  TO lt_order.
+    APPEND 'S_OFFAC'  TO lt_order.
+    APPEND 'S_ACDCBU' TO lt_order.
+    APPEND 'S_CPUDT'  TO lt_order.
+    APPEND 'S_CLERDT' TO lt_order.
+    APPEND 'S_CLRAC'  TO lt_order.
+    APPEND 'S_ORDID'  TO lt_order.
+
+    IF lt_tb[] IS NOT INITIAL.
+      DELETE ADJACENT DUPLICATES FROM lt_tb COMPARING ALL FIELDS.
+      LOOP AT lt_tb ASSIGNING FIELD-SYMBOL(<fs_tb>).
+        CLEAR ls_line.
+        CONCATENATE <fs_tb>-fieldname ';' <fs_tb>-value ';' INTO ls_line.
+        APPEND ls_line TO lt_line.
+      ENDLOOP.
+      ls_line = ';'.
+      APPEND ls_line TO lt_line.
+    ENDIF.
+
+    DESCRIBE TABLE gt_data LINES lv_rows.
+
+    SELECT *
+    FROM dd03vt INTO TABLE @DATA(lt_dd03vt)
+          WHERE tabname     = 'ZFIIGLAACCOUNT'
+          AND ddlanguage  = @sy-langu
+          ORDER BY position.
+
+    IF sy-subrc = 0.
+
+      DELETE ADJACENT DUPLICATES FROM lt_dd03vt COMPARING ALL FIELDS.
+      DELETE lt_dd03vt WHERE rollname = 'MANDT'.
+      DELETE lt_dd03vt WHERE   fieldname <> 'S_COMPY'
+                           AND fieldname <> 'S_BUSSR'
+                           AND fieldname <> 'S_CPUDT'
+                           AND fieldname <> 'S_STBLG'
+                           AND fieldname <> 'S_PSDAT'
+                           AND fieldname <> 'S_ACCDC'
+                           AND fieldname <> 'S_GLACT'
+                           AND fieldname <> 'S_GLACLN'
+                           AND fieldname <> 'S_DOCTXT'
+                           AND fieldname <> 'S_NSUPL'
+                           AND fieldname <> 'S_AMINCC'
+                           AND fieldname <> 'S_COMCR'
+                           AND fieldname <> 'S_AMTGC'
+                           AND fieldname <> 'S_GLOCR'
+                           AND fieldname <> 'S_AMTTR'
+                           AND fieldname <> 'S_TRNCR'
+                           AND fieldname <> 'S_ACDOCT'
+                           AND fieldname <> 'S_POSTK'
+                           AND fieldname <> 'S_PARTB'
+                           AND fieldname <> 'S_PROFCT'
+                           AND fieldname <> 'S_COSTC'
+                           AND fieldname <> 'S_SUPPL'
+                           AND fieldname <> 'S_OFFAC'
+                           AND fieldname <> 'S_ACDCBU'
+                           AND fieldname <> 'S_CLERDT'
+                           AND fieldname <> 'S_CLRAC'
+                           AND fieldname <> 'S_ORDID'.
+
+
+      LOOP AT lt_order ASSIGNING FIELD-SYMBOL(<lv_fieldname>).
+
+        LOOP AT lt_dd03vt ASSIGNING FIELD-SYMBOL(<fs_dd03vt>) WHERE fieldname = <lv_fieldname>.
+
+          CLEAR ls_line.
+          lv_tabix = sy-tabix.
+
+          IF <fs_dd03vt>-keyflag IS NOT INITIAL.
+            lv_is_key = abap_true.
+          ENDIF.
+
+          IF lv_is_key IS NOT INITIAL.
+            lv_file_line = lv_file_line.
+          ENDIF.
+
+          IF <fs_dd03vt>-scrtext_l = 'Nome' AND <fs_dd03vt>-fieldname = 'S_NSUPL'.
+            <fs_dd03vt>-scrtext_l = 'Nome Fornecedor'.
+
+          ELSEIF <fs_dd03vt>-scrtext_l = 'Estorno com' AND <fs_dd03vt>-fieldname = 'S_STBLG'.
+            <fs_dd03vt>-scrtext_l = 'Nº ref.estorno'.
+
+          ELSEIF <fs_dd03vt>-scrtext_l = 'Data de entrada' AND <fs_dd03vt>-fieldname = 'S_CPUDT'.
+            <fs_dd03vt>-scrtext_l = 'Data Criação lçto.contabil servidor'.
+
+          ELSEIF <fs_dd03vt>-scrtext_l = 'Data de entrada' AND <fs_dd03vt>-fieldname = 'S_DOCTXT'.
+            <fs_dd03vt>-scrtext_l = 'Txt.it.partida indv.'.
+
+          ENDIF.
+
+
+          lv_file_line = lv_file_line && <fs_dd03vt>-scrtext_l && ';'.
+
+        ENDLOOP.
+      ENDLOOP.
+
+      ls_line = lv_file_line.
+      APPEND ls_line TO lt_line.
+
+**********************************************
+    ENDIF.
+
+*-- BUSCANDO ELEMENTOS DA TABELA ORIGINAL
+    ocl_cl_table ?= cl_abap_structdescr=>describe_by_name( 'ZFIIGLAACCOUNT' ).
+    lv_count_fields = lines( ocl_cl_table->components[] ).
+    lt_ddfields = ocl_cl_table->get_ddic_field_list(  ).
+
+    CLEAR lv_file_line.
+
+    gt_comp = ocl_cl_table->components.
+
+    DELETE gt_comp WHERE name <> 'S_COMPY'
+                     AND name <> 'S_BUSSR'
+                     AND name <> 'S_PSDAT'
+                     AND name <> 'S_ACCDC'
+                     AND name <> 'S_NSUPL'
+                     AND name <> 'S_GLACT'
+                     AND name <> 'S_STBLG'
+                     AND name <> 'S_NSUPL'
+                     AND name <> 'S_GLACLN'
+                     AND name <> 'S_DOCTXT'
+                     AND name <> 'S_AMINCC'
+                     AND name <> 'S_COMCR'
+                     AND name <> 'S_AMTGC'
+                     AND name <> 'S_GLOCR'
+                     AND name <> 'S_AMTTR'
+                     AND name <> 'S_TRNCR'
+                     AND name <> 'S_ACDOCT'
+                     AND name <> 'S_POSTK'
+                     AND name <> 'S_PARTB'
+                     AND name <> 'S_PROFCT'
+                     AND name <> 'S_COSTC'
+                     AND name <> 'S_SUPPL'
+                     AND name <> 'S_OFFAC'
+                     AND name <> 'S_ACDCBU'
+                     AND name <> 'S_CLERDT'
+                     AND name <> 'S_CLRAC'
+                     AND name <> 'S_ORDID'.
+
+
+    LOOP AT gt_data ASSIGNING FIELD-SYMBOL(<lfs_tab>).
+
+      LOOP AT gt_comp INTO lv_field.
+
+        ASSIGN COMPONENT sy-tabix OF STRUCTURE <lfs_tab> TO <field>.
+
+        CHECK <field> IS ASSIGNED.
+        CASE lv_field-type_kind.
+          WHEN 'C'.
+            WRITE <field> TO lv_field_value.
+            REPLACE ALL OCCURRENCES OF '.' IN lv_field_value WITH '/'.
+          WHEN 'P'.
+
+            lv_aux   = <field>.
+            lv_valor = <field>.
+            lv_numb  = <field>.
+
+            IF lv_aux CP '*-'.
+              REPLACE ALL OCCURRENCES OF '.' IN lv_valor WITH ','.
+              WRITE lv_valor TO lv_field_value CURRENCY 'BRL'.
+              lv_aux = lv_field_value.
+              REPLACE ALL OCCURRENCES OF '-' IN lv_aux WITH ''.
+
+              SHIFT lv_aux LEFT DELETING LEADING space.
+
+              CONCATENATE '-' lv_aux  INTO lv_field_value.
+            ELSE.
+              SHIFT lv_valor LEFT DELETING LEADING space.
+              REPLACE ALL OCCURRENCES OF '.' IN lv_valor WITH ','.
+              WRITE lv_valor TO lv_field_value CURRENCY 'BRL'.
+            ENDIF.
+
+
+
+            IF lv_field-name = 'S_AMINCC'.
+              gs_xls_aux-coluna_08 = gs_xls_aux-coluna_08 + <field>.
+            ELSEIF lv_field-name = 'S_AMTGC'.
+              gs_xls_aux-coluna_10 = gs_xls_aux-coluna_10 + <field>.
+            ELSEIF lv_field-name = 'S_AMTTR'.
+              gs_xls_aux-coluna_12 = gs_xls_aux-coluna_12 + <field>.
+
+            ENDIF.
+
+
+          WHEN OTHERS.
+            WRITE <field> TO lv_field_value.
+        ENDCASE.
+
+        IF lv_field-name = 'S_COMPY'.
+          READ TABLE lt_companycode ASSIGNING FIELD-SYMBOL(<fs_companycode>) WITH KEY companycode = lv_field_value.
+          IF sy-subrc = 0.
+            CLEAR lv_aux.
+            CONCATENATE lv_field_value ' ' '(' <fs_companycode>-companycodename')' INTO lv_aux.
+            lv_field_value = lv_aux.
+          ENDIF.
+
+
+
+        ELSEIF lv_field-name = 'S_ACCDC'.
+          READ TABLE lt_businessareatext ASSIGNING FIELD-SYMBOL(<fs_businessareatext>) WITH KEY businessarea = lv_field_value.
+          IF sy-subrc = 0.
+            CLEAR lv_aux.
+            CONCATENATE lv_field_value ' ' '(' <fs_businessareatext>-businessareaname')' INTO lv_aux.
+            lv_field_value = lv_aux.
+          ENDIF.
+
+        ELSEIF lv_field-name = 'S_OFFAC'.
+
+          CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+            EXPORTING
+              input  = lv_field_value
+            IMPORTING
+              output = lv_offsettingaccount.
+
+
+          READ TABLE lt_offsettingaccount ASSIGNING FIELD-SYMBOL(<fs_offsettingaccount>) WITH KEY offsettingaccount = lv_offsettingaccount.
+          IF sy-subrc = 0.
+            CLEAR lv_aux.
+            CONCATENATE lv_field_value ' ' '(' <fs_offsettingaccount>-offsettingaccountname ')' INTO lv_aux.
+            lv_field_value = lv_aux.
+
+          ELSE.
+            CONCATENATE lv_field_value ' ' '(' ')' INTO lv_aux.
+            lv_field_value = lv_aux.
+
+          ENDIF.
+
+        ELSEIF lv_field-name = 'S_PROFCT'.
+
+          CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+            EXPORTING
+              input  = lv_field_value
+            IMPORTING
+              output = lv_profitcenter.
+
+
+          READ TABLE lt_profitcentertext ASSIGNING FIELD-SYMBOL(<fs_profitcentertext>) WITH KEY profitcenter = lv_profitcenter.
+          IF sy-subrc = 0.
+            CLEAR lv_aux.
+            CONCATENATE lv_field_value ' ' '(' <fs_profitcentertext>-profitcentername ')' INTO lv_aux.
+            lv_field_value = lv_aux.
+          ENDIF.
+
+
+        ELSEIF lv_field-name = 'S_COSTC'.
+
+          CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+            EXPORTING
+              input  = lv_field_value
+            IMPORTING
+              output = lv_costcenter.
+
+
+          READ TABLE lt_costcentertext ASSIGNING FIELD-SYMBOL(<fs_costcentertext>) WITH KEY costcenter = lv_costcenter.
+          IF sy-subrc = 0.
+            CLEAR lv_aux.
+            CONCATENATE lv_field_value ' ' '(' <fs_costcentertext>-costcentername ')' INTO lv_aux.
+            lv_field_value = lv_aux.
+          ENDIF.
+        ENDIF.
+
+        lv_file_line = lv_file_line && lv_field_value && ';' .
+        CLEAR lv_field_value.
+
+      ENDLOOP.
+
+      ls_line = lv_file_line.
+      APPEND ls_line TO lt_line.
+      CLEAR lv_file_line.
+
+    ENDLOOP.
+
+    DATA lv_file TYPE string.
+    PERFORM zf_busca_retorno  CHANGING lv_file.
+
+    PERFORM zexcel_s_export_xls TABLES lt_line et_file_tab USING lv_file CHANGING e_bytecount e_full_path e_buffer.
+
+*TABLES ET_FILE_TAB CHANGING E_BYTECOUNT E_FULL_PATH E_BUFFER.
+
+  ELSE.
+*    MESSAGE 'Nenhum valor encontrado.' TYPE 'E'.
+  ENDIF.
+
+ENDFORM.
+FORM f_insert_company TABLES pt_tb STRUCTURE zme_cabec_xls
+                       USING p_field TYPE zme_cabec_xls-fieldname.
+
+  DATA: lv_value    TYPE string,        " Filtro final formatado
+        lt_group    TYPE TABLE OF string, " Tabela temporária para agrupamento
+        lv_temp     TYPE string,        " Valor temporário formatado
+        lv_concat   TYPE string,        " Valores concatenados por operador
+        lv_operator TYPE string.        " Operador atual.
+
+  " Tabela interna para armazenar agrupamentos por operador
+  TYPES: BEGIN OF ty_group,
+           operator TYPE string,
+           values   TYPE string,
+         END OF ty_group.
+  DATA: lt_groups TYPE TABLE OF ty_group,
+        ls_group  TYPE ty_group.
+
+  LOOP AT r_compy ASSIGNING FIELD-SYMBOL(<fs_compy>).
+
+    lv_temp = <fs_compy>-low.
+
+    " Procurar pelo operador na tabela de agrupamento
+    READ TABLE lt_groups WITH KEY operator = <fs_compy>-option ASSIGNING FIELD-SYMBOL(<fs_group>).
+
+    IF sy-subrc = 0.
+      " Concatena o novo valor com os existentes para o operador
+      CONCATENATE <fs_group>-values lv_temp INTO <fs_group>-values SEPARATED BY ', '.
+    ELSE.
+      " Cria um novo agrupamento para o operador
+      CLEAR ls_group.
+      ls_group-operator = <fs_compy>-option.
+
+      " Formatar valor baseado no operador
+      CASE <fs_compy>-option.
+        WHEN 'CP'.  " Contém padrão
+          CONCATENATE '* ' lv_temp '*' INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'EQ'.  " Igual
+          CONCATENATE ' = ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'BT'.  " Entre
+          IF <fs_compy>-high IS NOT INITIAL.
+            CONCATENATE lv_temp ' até' <fs_compy>-high INTO ls_group-values SEPARATED BY space.
+          ELSE.
+            lv_temp = lv_temp.
+          ENDIF.
+
+        WHEN 'LT'.  " Menor que
+          CONCATENATE ' < ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'LE'.  " Menor ou igual
+          CONCATENATE ' <= ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'GT'.  " Maior que
+          CONCATENATE ' > ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'GE'.  " Maior ou igual
+          CONCATENATE ' >= ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'NE'.  " Diferente
+          CONCATENATE ' <> ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN OTHERS.
+          ls_group-values = lv_temp.
+      ENDCASE.
+
+
+      APPEND ls_group TO lt_groups.
+    ENDIF.
+
+  ENDLOOP.
+
+  " Montar a string final agrupada
+  LOOP AT lt_groups INTO ls_group.
+    IF lv_value IS INITIAL.
+*      CONCATENATE ls_group-operator ls_group-values INTO lv_value SEPARATED BY space.
+
+*      lv_value = ls_group-values.
+      CONCATENATE  ls_group-values '.' INTO lv_value.
+
+    ELSE.
+*      CONCATENATE lv_value ls_group-values INTO lv_value SEPARATED BY ';'.
+      lv_value = lv_value && ls_group-values && '.' && ';' .
+*      lv_file_line = lv_file_line && lv_field_value && ';' .
+    ENDIF.
+  ENDLOOP.
+
+  " Adicionar o resultado final na tabela de saída
+  APPEND INITIAL LINE TO pt_tb ASSIGNING FIELD-SYMBOL(<fs_tb>).
+  <fs_tb>-fieldname = p_field.
+  <fs_tb>-value = lv_value.
+
+ENDFORM.
+**&---------------------------------------------------------------------*
+**& Form f_insert_ZMTETEST
+**&---------------------------------------------------------------------*
+FORM f_insert_gla TABLES pt_tb STRUCTURE zme_cabec_xls USING
+                              p_field TYPE zme_cabec_xls-fieldname.
+
+
+  DATA: lv_value    TYPE string,        " Filtro final formatado
+        lt_group    TYPE TABLE OF string, " Tabela temporária para agrupamento
+        lv_temp     TYPE string,        " Valor temporário formatado
+        lv_concat   TYPE string,        " Valores concatenados por operador
+        lv_operator TYPE string.        " Operador atual.
+
+  " Tabela interna para armazenar agrupamentos por operador
+  TYPES: BEGIN OF ty_group,
+           operator TYPE string,
+           values   TYPE string,
+         END OF ty_group.
+  DATA: lt_groups TYPE TABLE OF ty_group,
+        ls_group  TYPE ty_group.
+
+  LOOP AT r_glact ASSIGNING FIELD-SYMBOL(<fs_compy>).
+
+    lv_temp = <fs_compy>-low.
+
+    " Procurar pelo operador na tabela de agrupamento
+    READ TABLE lt_groups WITH KEY operator = <fs_compy>-option ASSIGNING FIELD-SYMBOL(<fs_group>).
+
+    IF sy-subrc = 0.
+      " Concatena o novo valor com os existentes para o operador
+      CONCATENATE <fs_group>-values lv_temp INTO <fs_group>-values SEPARATED BY ', '.
+    ELSE.
+      " Cria um novo agrupamento para o operador
+      CLEAR ls_group.
+      ls_group-operator = <fs_compy>-option.
+
+      " Formatar valor baseado no operador
+      CASE <fs_compy>-option.
+        WHEN 'CP'.  " Contém padrão
+          CONCATENATE '* ' lv_temp '*' INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'EQ'.  " Igual
+          CONCATENATE ' = ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'BT'.  " Entre
+          IF <fs_compy>-high IS NOT INITIAL.
+            CONCATENATE lv_temp ' até' <fs_compy>-high INTO ls_group-values SEPARATED BY space.
+          ELSE.
+            lv_temp = lv_temp.
+          ENDIF.
+
+        WHEN 'LT'.  " Menor que
+          CONCATENATE ' < ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'LE'.  " Menor ou igual
+          CONCATENATE ' <= ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'GT'.  " Maior que
+          CONCATENATE ' > ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'GE'.  " Maior ou igual
+          CONCATENATE ' >= ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN 'NE'.  " Diferente
+          CONCATENATE ' <> ' lv_temp INTO ls_group-values SEPARATED BY space.
+
+        WHEN OTHERS.
+          ls_group-values = lv_temp.
+      ENDCASE.
+
+
+      APPEND ls_group TO lt_groups.
+    ENDIF.
+
+  ENDLOOP.
+
+  " Montar a string final agrupada
+  LOOP AT lt_groups INTO ls_group.
+    IF lv_value IS INITIAL.
+*      CONCATENATE ls_group-operator ls_group-values INTO lv_value SEPARATED BY space.
+
+      CONCATENATE  ls_group-values '.' INTO lv_value.
+    ELSE.
+*      CONCATENATE lv_value ls_group-values '.' INTO lv_value SEPARATED BY '; '.
+      lv_value = lv_value && ls_group-values && '.' && ';' .
+    ENDIF.
+  ENDLOOP.
+
+  " Adicionar o resultado final na tabela de saída
+  APPEND INITIAL LINE TO pt_tb ASSIGNING FIELD-SYMBOL(<fs_tb>).
+  <fs_tb>-fieldname = p_field.
+  <fs_tb>-value = lv_value.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_insert_ZMTETEST
+*&---------------------------------------------------------------------*
+FORM f_insert_header TABLES pt_tb STRUCTURE zme_cabec_xls.
+
+  DATA: lv_value    TYPE string,
+        lv_fullname TYPE string,
+        lv_data     TYPE char10,
+        lv_time     TYPE char8.
+
+  DATA: t_address LIKE  bapiaddr3,
+        t_return  TYPE TABLE OF bapiret2.
+
+  " Obter detalhes do usuário
+  CALL FUNCTION 'BAPI_USER_GET_DETAIL'
+    EXPORTING
+      username = sy-uname
+    IMPORTING
+      address  = t_address
+    TABLES
+      return   = t_return.
+
+  IF sy-subrc EQ 0.
+    lv_fullname = t_address-fullname.
+  ENDIF.
+
+  " Inserir na tabela: Usuário
+  APPEND INITIAL LINE TO pt_tb ASSIGNING FIELD-SYMBOL(<fs_tb1>).
+  <fs_tb1>-fieldname = 'Usuário'.
+  <fs_tb1>-value = lv_fullname.
+
+  gv_datum = sy-datum.
+  WRITE sy-datum TO lv_data.
+  REPLACE ALL OCCURRENCES OF '.' IN lv_data WITH '/'.
+  CONDENSE lv_data.
+
+  " Inserir na tabela: Data
+  APPEND INITIAL LINE TO pt_tb ASSIGNING FIELD-SYMBOL(<fs_tb2>).
+  <fs_tb2>-fieldname = 'Data'.
+  <fs_tb2>-value = lv_data.
+
+  gv_uzeit = sy-uzeit.
+  WRITE sy-uzeit TO lv_time.
+  CONDENSE lv_time.
+
+  " Inserir na tabela: Hora
+  APPEND INITIAL LINE TO pt_tb ASSIGNING FIELD-SYMBOL(<fs_tb3>).
+  <fs_tb3>-fieldname = 'Hora'.
+  <fs_tb3>-value = lv_time.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form process_filter
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*& -->  p1        text
+*& <--  p2        text
+*&---------------------------------------------------------------------*
+FORM process_filter .
+
+  DATA: lt_ledger   TYPE TABLE OF string,
+        lt_compy    TYPE TABLE OF string,
+        lt_glact    TYPE TABLE OF string,
+        lt_stats    TYPE TABLE OF string,
+
+        lt_psdat    TYPE TABLE OF string,
+        lt_postk    TYPE TABLE OF string,
+        lt_asingr   TYPE TABLE OF string,
+        lt_acdoct   TYPE TABLE OF string,
+        lt_amincc   TYPE TABLE OF string,
+        lt_txcode   TYPE TABLE OF string,
+        lt_clerdt   TYPE TABLE OF string,
+        lt_profct   TYPE TABLE OF string,
+        lt_segmt    TYPE TABLE OF string,
+        lt_doctxt   TYPE TABLE OF string,
+
+
+***************************************************
+        lt_conta    TYPE TABLE OF string,
+        lt_fintr    TYPE TABLE OF string,
+        lt_bustr    TYPE TABLE OF string,
+        lt_cobtr    TYPE TABLE OF string,
+        lt_refdt    TYPE TABLE OF string,
+        lt_logsy    TYPE TABLE OF string,
+        lt_refdc    TYPE TABLE OF string,
+        lt_refdo    TYPE TABLE OF string,
+        lt_refdi    TYPE TABLE OF string,
+        lt_refdg    TYPE TABLE OF string,
+        lt_trxsi    TYPE TABLE OF string,
+        lt_isrev    TYPE TABLE OF string,
+        lt_rvref    TYPE TABLE OF string,
+        lt_rvdoc    TYPE TABLE OF string,
+        lt_isset    TYPE TABLE OF string,
+        lt_isstl    TYPE TABLE OF string,
+        lt_prdct    TYPE TABLE OF string,
+        lt_prdco    TYPE TABLE OF string,
+        lt_prddo    TYPE TABLE OF string,
+        lt_prddi    TYPE TABLE OF string,
+        lt_prjcc    TYPE TABLE OF string,
+        lt_prjfy    TYPE TABLE OF string,
+        lt_prdje    TYPE TABLE OF string,
+        lt_prdji    TYPE TABLE OF string,
+        lt_srdct    TYPE TABLE OF string,
+        lt_srlog    TYPE TABLE OF string,
+
+***************************************************
+
+        lv_aux_01   TYPE string,
+        lv_datum_01 TYPE string,
+        lv_datum_02 TYPE string,
+
+        lv_key      TYPE string,
+        lv_value    TYPE string,
+        lv_low      TYPE char100,
+        lv_high     TYPE string,
+        lv_op       TYPE string,
+        lv_index    TYPE i,
+        lv_gl       TYPE i_glaccountlineitemrawdata-glaccount.
+
+
+  REPLACE ALL OCCURRENCES OF '"' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF 'KEY:' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF 'KEY:' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF 'KEY:' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF 'KEY:' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF 'KEY:' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF 'key:' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF 'key:' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF 'key:' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF 'key:' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF 'key:' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF 'TEXT:' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF 'TEXT:' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF 'TEXT:' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF 'TEXT:' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF 'TEXT:' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF 'text:' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF 'text:' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF 'text:' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF 'text:' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF 'text:' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF '{' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF '{' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF '{' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF '{' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF '{' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF '}' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF '}' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF '}' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF '}' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF '}' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF ']' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF ']' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF ']' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF ']' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF ']' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF '[' IN s_ledger WITH ''.
+  REPLACE ALL OCCURRENCES OF '[' IN s_compy  WITH ''.
+  REPLACE ALL OCCURRENCES OF '[' IN s_glact  WITH ''.
+  REPLACE ALL OCCURRENCES OF '[' IN s_status WITH ''.
+  REPLACE ALL OCCURRENCES OF '[' IN s_psdat  WITH ''.
+
+  REPLACE ALL OCCURRENCES OF '"' IN s_postk   WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_asingr  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_acdoct  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_amincc  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_txcode  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_clerdt  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_profct  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_segmt   WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_doctxt  WITH ''.
+
+
+  SPLIT s_ledger  AT ',' INTO TABLE lt_ledger.
+  SPLIT s_compy   AT ',' INTO TABLE lt_compy.
+  SPLIT s_glact   AT ',' INTO TABLE lt_glact.
+  SPLIT s_psdat   AT ',' INTO TABLE lt_psdat.
+  SPLIT s_status  AT ',' INTO TABLE lt_stats.
+
+  SPLIT s_postk   AT ',' INTO TABLE lt_postk.
+  SPLIT s_asingr  AT ',' INTO TABLE lt_asingr.
+  SPLIT s_acdoct  AT ',' INTO TABLE lt_acdoct.
+  SPLIT s_amincc  AT ',' INTO TABLE lt_amincc.
+  SPLIT s_txcode  AT ',' INTO TABLE lt_txcode.
+  SPLIT s_clerdt  AT ',' INTO TABLE lt_clerdt.
+  SPLIT s_profct  AT ',' INTO TABLE lt_profct.
+  SPLIT s_segmt   AT ',' INTO TABLE lt_segmt.
+  SPLIT s_doctxt  AT ',' INTO TABLE lt_doctxt.
+
+
+***************************************************
+
+  REPLACE ALL OCCURRENCES OF '"' IN s_conta  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_fintr  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_bustr  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_cobtr  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_refdt  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_logsy  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_refdc  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_refdo  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_refdi  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_refdg  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_trxsi  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_isrev  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_rvref  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_rvdoc  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_isset  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_isstl  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_prdct  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_prdco  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_prddo  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_prddi  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_prjcc  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_prjfy  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_prdje  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_prdji  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_srdct  WITH ''.
+  REPLACE ALL OCCURRENCES OF '"' IN s_srlog  WITH ''.
+
+
+  SPLIT s_conta  AT ',' INTO TABLE lt_conta.
+  SPLIT s_fintr  AT ',' INTO TABLE lt_fintr.
+  SPLIT s_bustr  AT ',' INTO TABLE lt_bustr.
+  SPLIT s_cobtr  AT ',' INTO TABLE lt_cobtr.
+  SPLIT s_refdt  AT ',' INTO TABLE lt_refdt.
+  SPLIT s_logsy  AT ',' INTO TABLE lt_logsy.
+  SPLIT s_refdc  AT ',' INTO TABLE lt_refdc.
+  SPLIT s_refdo  AT ',' INTO TABLE lt_refdo.
+  SPLIT s_refdi  AT ',' INTO TABLE lt_refdi.
+  SPLIT s_refdg  AT ',' INTO TABLE lt_refdg.
+  SPLIT s_trxsi  AT ',' INTO TABLE lt_trxsi.
+  SPLIT s_isrev  AT ',' INTO TABLE lt_isrev.
+  SPLIT s_rvref  AT ',' INTO TABLE lt_rvref.
+  SPLIT s_rvdoc  AT ',' INTO TABLE lt_rvdoc.
+  SPLIT s_isset  AT ',' INTO TABLE lt_isset.
+  SPLIT s_isstl  AT ',' INTO TABLE lt_isstl.
+  SPLIT s_prdct  AT ',' INTO TABLE lt_prdct.
+  SPLIT s_prdco  AT ',' INTO TABLE lt_prdco.
+  SPLIT s_prddo  AT ',' INTO TABLE lt_prddo.
+  SPLIT s_prddi  AT ',' INTO TABLE lt_prddi.
+  SPLIT s_prjcc  AT ',' INTO TABLE lt_prjcc.
+  SPLIT s_prjfy  AT ',' INTO TABLE lt_prjfy.
+  SPLIT s_prdje  AT ',' INTO TABLE lt_prdje.
+  SPLIT s_prdji  AT ',' INTO TABLE lt_prdji.
+  SPLIT s_srdct  AT ',' INTO TABLE lt_srdct.
+  SPLIT s_srlog  AT ',' INTO TABLE lt_srlog.
+
+  gs_zexcel_create_entity-mandt    = sy-mandt.
+  gs_zexcel_create_entity-s_ledger = s_ledger.
+  gs_zexcel_create_entity-s_compy  = s_compy.
+  gs_zexcel_create_entity-s_glact  = s_glact.
+  gs_zexcel_create_entity-s_psdat  = s_psdat.
+  gs_zexcel_create_entity-s_status = s_status.
+
+***************************************************
+
+  DELETE ADJACENT DUPLICATES FROM lt_ledger COMPARING ALL FIELDS.
+  LOOP AT lt_ledger ASSIGNING FIELD-SYMBOL(<fs_ledger>).
+
+    SPLIT <fs_ledger> AT '=' INTO lv_key lv_value.
+
+    " Preenche os campos LOW, HIGH e OP conforme o índice
+    IF lv_key CP 'S_LEDGER*'.
+      lv_low = lv_value.
+      lv_op  = 'EQ'.
+    ELSE.
+      lv_op = 'EQ'.
+      lv_low = <fs_ledger>.
+    ENDIF.
+
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_ledger.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+
+  ENDLOOP.
+
+****************************
+*          compy
+****************************
+  DELETE ADJACENT DUPLICATES FROM lt_compy COMPARING ALL FIELDS.
+  LOOP AT lt_compy ASSIGNING FIELD-SYMBOL(<fs_compy>).
+
+    SPLIT <fs_compy> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ELSEIF lv_key CP 'op*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ELSE.
+      lv_op = 'EQ'.
+      lv_low = <fs_compy>.
+    ENDIF.
+
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_compy.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+
+
+  ENDLOOP.
+
+
+****************************
+*****   glact
+****************************
+  DELETE ADJACENT DUPLICATES FROM lt_glact COMPARING ALL FIELDS.
+  LOOP AT lt_glact ASSIGNING FIELD-SYMBOL(<fs_glact>).
+
+    SPLIT <fs_glact> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ELSE.
+      lv_op = 'EQ'.
+      lv_low = <fs_glact>.
+    ENDIF.
+
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      lv_gl = lv_low.
+
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+        EXPORTING
+          input  = lv_gl
+        IMPORTING
+          output = lv_gl.
+
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_gl high = lv_high ) TO r_glact.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+
+  ENDLOOP.
+
+
+****************************
+**  psdat
+****************************
+  CLEAR: lv_low, lv_high.
+  DELETE ADJACENT DUPLICATES FROM lt_psdat COMPARING ALL FIELDS.
+  LOOP AT lt_psdat ASSIGNING FIELD-SYMBOL(<fs_psdat>).
+
+    SPLIT <fs_psdat> AT '=' INTO lv_key lv_value.
+
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+
+    ELSEIF lv_key CP 'OP*'.
+      SPLIT <fs_psdat> AT ':' INTO lv_aux_01 lv_op.
+    ELSEIF lv_key CP 'op*'.
+      SPLIT <fs_psdat> AT ':' INTO lv_aux_01 lv_op.
+    ELSEIF lv_key CP 'VALUE1*'.
+      CONCATENATE <fs_psdat>+7(4) <fs_psdat>+12(2) <fs_psdat>+15(2) INTO lv_low.
+    ELSEIF lv_key CP 'VALUE2*'.
+      CONCATENATE <fs_psdat>+7(4) <fs_psdat>+12(2) <fs_psdat>+15(2) INTO lv_high.
+    ENDIF.
+
+*    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+*    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+*      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_psdat.
+*      CLEAR: lv_low, lv_high, lv_op.
+*    ENDIF.
+
+  ENDLOOP.
+
+  IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+    APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_psdatf.
+    CLEAR: lv_low, lv_high, lv_op.
+*    R_PSDATF[] =  r_psdat[].
+  ENDIF.
+
+
+****************************
+**  Status
+****************************
+  DELETE ADJACENT DUPLICATES FROM lt_stats COMPARING ALL FIELDS.
+  LOOP AT lt_stats ASSIGNING FIELD-SYMBOL(<fs_stats>).
+
+    CLEAR: lv_datum_01, lv_datum_02, lv_op.
+    SPLIT <fs_stats> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+
+*      IF lv_value = 1.
+*        lv_value = 'Partidas em Aberto'.
+*      ELSE.
+*        lv_value = 'Itens Compensados'.
+*      ENDIF.
+
+      IF  lv_value = 0.
+
+        lv_value = 'Todos itens'.
+
+      ELSEIF lv_value = 1.
+        lv_value = 'Partidas em Aberto'.
+      ELSE.
+        lv_value = 'Itens Compensados'.
+      ENDIF.
+
+
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ELSE.
+      lv_op = 'EQ'.
+      lv_low = <fs_stats>.
+    ENDIF.
+
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_stats.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+
+  ENDLOOP.
+
+
+****************************
+**  PostK
+****************************
+  DELETE ADJACENT DUPLICATES FROM lt_postk COMPARING ALL FIELDS.
+  LOOP AT lt_postk ASSIGNING FIELD-SYMBOL(<fs_postk>).
+
+    SPLIT <fs_postk> AT '=' INTO lv_key lv_value.
+
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ELSEIF lv_key CP 'op*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ELSE.
+      lv_op = 'EQ'.
+      lv_low = <fs_postk>.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_postk.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+
+****************************
+*     **  asingr **
+****************************
+
+  LOOP AT lt_asingr ASSIGNING FIELD-SYMBOL(<fs_asingr>).
+    SPLIT <fs_asingr> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ELSEIF lv_key CP 'op*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ELSE.
+      lv_op = 'EQ'.
+      lv_low = <fs_asingr>.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_asingr.
+      CLEAR: lv_low, lv_high, lv_op.
+      EXIT.
+    ENDIF.
+  ENDLOOP.
+
+
+****************************
+*     **  acdoct **
+****************************
+
+  LOOP AT lt_acdoct ASSIGNING FIELD-SYMBOL(<fs_acdoct>).
+    SPLIT <fs_acdoct> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_acdoct.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+
+****************************
+*     **  amincc **
+****************************
+
+  LOOP AT lt_amincc ASSIGNING FIELD-SYMBOL(<fs_amincc>).
+    SPLIT <fs_amincc> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_amincc.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     **  txcode **
+****************************
+
+  LOOP AT lt_txcode ASSIGNING FIELD-SYMBOL(<fs_txcode>).
+    SPLIT <fs_txcode> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_txcode.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+
+****************************
+*     **  clerdt **
+****************************
+
+  LOOP AT lt_clerdt ASSIGNING FIELD-SYMBOL(<fs_clerdt>).
+    SPLIT <fs_clerdt> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_clerdt.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     **  profct **
+****************************
+
+  LOOP AT lt_profct ASSIGNING FIELD-SYMBOL(<fs_profct>).
+    SPLIT <fs_profct> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_profct.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     **  segmt **
+****************************
+
+  LOOP AT lt_segmt ASSIGNING FIELD-SYMBOL(<fs_segmt>).
+    SPLIT <fs_segmt> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_segmt.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+
+****************************
+*     **  doctxt **
+****************************
+
+  LOOP AT lt_doctxt ASSIGNING FIELD-SYMBOL(<fs_doctxt>).
+    SPLIT <fs_doctxt> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_doctxt.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     **  conta **
+****************************
+
+  LOOP AT lt_conta ASSIGNING FIELD-SYMBOL(<fs_conta>).
+    SPLIT <fs_conta> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_conta.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     **  fintr **
+****************************
+
+  LOOP AT lt_fintr ASSIGNING FIELD-SYMBOL(<fs_fintr>).
+    SPLIT <fs_fintr> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_fintr.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     **  bustr **
+****************************
+
+  LOOP AT lt_bustr ASSIGNING FIELD-SYMBOL(<fs_bustr>).
+    SPLIT <fs_bustr> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_bustr.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** cobtr **
+****************************
+
+  LOOP AT lt_cobtr ASSIGNING FIELD-SYMBOL(<fs_cobtr>).
+    SPLIT <fs_cobtr> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_cobtr.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** refdt **
+****************************
+
+  LOOP AT lt_refdt ASSIGNING FIELD-SYMBOL(<fs_refdt>).
+    SPLIT <fs_refdt> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_refdt.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** logsy **
+****************************
+
+  LOOP AT lt_logsy ASSIGNING FIELD-SYMBOL(<fs_logsy>).
+    SPLIT <fs_logsy> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_logsy.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** refdc **
+****************************
+
+  LOOP AT lt_refdc ASSIGNING FIELD-SYMBOL(<fs_refdc>).
+    SPLIT <fs_refdc> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_refdc.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** refdo **
+****************************
+
+  LOOP AT lt_refdo ASSIGNING FIELD-SYMBOL(<fs_refdo>).
+    SPLIT <fs_refdo> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_refdo.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** refdi **
+****************************
+
+  LOOP AT lt_refdi ASSIGNING FIELD-SYMBOL(<fs_refdi>).
+    SPLIT <fs_refdi> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_refdi.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** refdg **
+****************************
+
+  LOOP AT lt_refdg ASSIGNING FIELD-SYMBOL(<fs_refdg>).
+    SPLIT <fs_refdg> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_refdg.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** trxsi **
+****************************
+
+  LOOP AT lt_trxsi ASSIGNING FIELD-SYMBOL(<fs_trxsi>).
+    SPLIT <fs_trxsi> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_trxsi.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** isrev **
+****************************
+
+  LOOP AT lt_isrev ASSIGNING FIELD-SYMBOL(<fs_isrev>).
+    SPLIT <fs_isrev> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_isrev.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** rvref **
+****************************
+
+  LOOP AT lt_rvref ASSIGNING FIELD-SYMBOL(<fs_rvref>).
+    SPLIT <fs_rvref> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_rvref.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** rvdoc **
+****************************
+
+  LOOP AT lt_rvdoc ASSIGNING FIELD-SYMBOL(<fs_rvdoc>).
+    SPLIT <fs_rvdoc> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_rvdoc.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+****************************
+*     ** isset **
+****************************
+
+  LOOP AT lt_isset ASSIGNING FIELD-SYMBOL(<fs_isset>).
+    SPLIT <fs_isset> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_isset.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** isstl **
+****************************
+
+  LOOP AT lt_isstl ASSIGNING FIELD-SYMBOL(<fs_isstl>).
+    SPLIT <fs_isstl> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_isstl.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** prdct **
+****************************
+
+  LOOP AT lt_prdct ASSIGNING FIELD-SYMBOL(<fs_prdct>).
+    SPLIT <fs_prdct> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_prdct.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** prdco **
+****************************
+
+  LOOP AT lt_prdco ASSIGNING FIELD-SYMBOL(<fs_prdco>).
+    SPLIT <fs_prdco> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_prdco.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** prddo **
+****************************
+
+  LOOP AT lt_prddo ASSIGNING FIELD-SYMBOL(<fs_prddo>).
+    SPLIT <fs_prddo> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_prddo.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** prddi **
+****************************
+
+  LOOP AT lt_prddi ASSIGNING FIELD-SYMBOL(<fs_prddi>).
+    SPLIT <fs_prddi> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_prddi.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** prjcc **
+****************************
+
+  LOOP AT lt_prjcc ASSIGNING FIELD-SYMBOL(<fs_prjcc>).
+    SPLIT <fs_prjcc> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_prjcc.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** prjfy **
+****************************
+
+  LOOP AT lt_prjfy ASSIGNING FIELD-SYMBOL(<fs_prjfy>).
+    SPLIT <fs_prjfy> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_prjfy.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** prdje **
+****************************
+
+  LOOP AT lt_prdje ASSIGNING FIELD-SYMBOL(<fs_prdje>).
+    SPLIT <fs_prdje> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_prdje.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+
+****************************
+*     ** prdji **
+****************************
+
+  LOOP AT lt_prdji ASSIGNING FIELD-SYMBOL(<fs_prdji>).
+    SPLIT <fs_prdji> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_prdji.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+****************************
+*     ** srdct **
+****************************
+
+  LOOP AT lt_srdct ASSIGNING FIELD-SYMBOL(<fs_srdct>).
+    SPLIT <fs_srdct> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_srdct.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+****************************
+*     ** srlog **
+****************************
+
+  LOOP AT lt_srlog ASSIGNING FIELD-SYMBOL(<fs_srlog>).
+    SPLIT <fs_srlog> AT '=' INTO lv_key lv_value.
+    IF lv_key CP 'LOW*'.
+      lv_index = lv_key+3(1).
+      lv_low = lv_value.
+    ELSEIF lv_key CP 'HIGH*'.
+      lv_index = lv_key+4(1).
+      lv_high = lv_value.
+    ELSEIF lv_key CP 'OP*'.
+      lv_index = lv_key+2(1).
+      lv_op = lv_value.
+    ENDIF.
+    " Se todos os campos (LOW, HIGH, OP) estiverem preenchidos, adiciona ao intervalo
+    IF lv_low IS NOT INITIAL AND lv_op IS NOT INITIAL.
+      APPEND VALUE #( sign = 'I' option = lv_op low = lv_low high = lv_high ) TO r_srlog.
+      CLEAR: lv_low, lv_high, lv_op.
+    ENDIF.
+  ENDLOOP.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form f_insert_ZMTETEST
+*&---------------------------------------------------------------------*
+FORM f_insert_zmtetest TABLES pt_tb STRUCTURE zme_cabec_xls USING
+                              p_field TYPE zme_cabec_xls-fieldname
+                              p_low
+                              p_high
+                              p_op.
+
+  DATA: lv_value TYPE char100.
+
+  " Lógica de concatenação baseado no operador
+  CASE p_op.
+
+    WHEN 'CP'.  " Igual
+*      lv_value = p_low.
+      CONCATENATE ' *' p_low '*' INTO lv_value.
+
+    WHEN 'EQ'.  " Igual
+*      lv_value = p_low.
+      CONCATENATE ' = ' p_low INTO lv_value SEPARATED BY space.
+
+    WHEN 'BT'.  " Entre
+      IF p_high IS NOT INITIAL.
+        CONCATENATE ' ' p_low 'até' p_high INTO lv_value SEPARATED BY space.
+      ELSE.
+        lv_value = p_low.  " Se não houver HIGH, apenas o LOW
+      ENDIF.
+
+    WHEN 'LT'.  " Menor que
+      CONCATENATE ' < ' p_low INTO lv_value SEPARATED BY space.
+
+    WHEN 'LE'.  " Menor ou igual
+      CONCATENATE ' <= ' p_low INTO lv_value SEPARATED BY space.
+
+    WHEN 'GT'.  " Maior que
+      CONCATENATE ' > ' p_low INTO lv_value SEPARATED BY space.
+
+    WHEN 'GE'.  " Maior ou igual
+      CONCATENATE ' >= ' p_low INTO lv_value SEPARATED BY space.
+
+    WHEN 'NE'.  " Diferente
+      CONCATENATE ' <> ' p_low INTO lv_value SEPARATED BY space.
+
+      " Adicione outros operadores conforme necessário
+    WHEN OTHERS.
+      lv_value = p_low.  " Valor padrão, caso o operador não seja reconhecido
+  ENDCASE.
+
+
+  " Inserir na tabela
+  APPEND INITIAL LINE TO pt_tb ASSIGNING FIELD-SYMBOL(<fs_tb>).
+  <fs_tb>-fieldname = p_field.
+
+  WRITE lv_value TO lv_value.
+  <fs_tb>-value = lv_value.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form zexcel_s_export_xls
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> LT_LINE
+*&      --> LV_FILE
+*&---------------------------------------------------------------------*
+FORM zexcel_s_export_xls TABLES   pt_line et_file_tab
+                          USING    pv_file
+ CHANGING e_bytecount e_full_path e_buffer.
+
+  DATA: lo_excel        TYPE REF TO zcl_excel,
+        lo_style_title  TYPE REF TO zcl_excel_style,
+        lo_excel_writer TYPE REF TO zif_excel_writer,
+        lo_worksheet    TYPE REF TO zcl_excel_worksheet,
+        lo_border_light TYPE REF TO zcl_excel_style_border,
+        lo_style_color0 TYPE REF TO zcl_excel_style,
+        lo_style_color1 TYPE REF TO zcl_excel_style,
+        lo_style_color2 TYPE REF TO zcl_excel_style,
+        lo_style_color3 TYPE REF TO zcl_excel_style,
+        lo_style_color4 TYPE REF TO zcl_excel_style,
+        lo_style_color5 TYPE REF TO zcl_excel_style,
+        lo_style_color6 TYPE REF TO zcl_excel_style,
+        lo_style_color7 TYPE REF TO zcl_excel_style,
+        lo_style_credit TYPE REF TO zcl_excel_style,
+        lo_style_link   TYPE REF TO zcl_excel_style,
+        lo_column       TYPE REF TO zcl_excel_column,
+        lo_row          TYPE REF TO zcl_excel_row,
+        lo_hyperlink    TYPE REF TO zcl_excel_hyperlink.
+
+  DATA: lv_style_color0_guid TYPE zexcel_cell_style,
+        lv_style_color1_guid TYPE zexcel_cell_style,
+        lv_style_color2_guid TYPE zexcel_cell_style,
+        lv_style_color3_guid TYPE zexcel_cell_style,
+        lv_style_color4_guid TYPE zexcel_cell_style,
+        lv_style_color5_guid TYPE zexcel_cell_style,
+        lv_style_color6_guid TYPE zexcel_cell_style,
+        lv_style_color7_guid TYPE zexcel_cell_style,
+        lv_style_credit_guid TYPE zexcel_cell_style,
+        lv_style_title_guid  TYPE zexcel_cell_style,
+        lv_style_link_guid   TYPE zexcel_cell_style.
+
+  DATA: lv_col_str TYPE zexcel_cell_column_alpha,
+        lv_row     TYPE i,
+        lv_col     TYPE i,
+        lt_mapper  TYPE TABLE OF zexcel_cell_style,
+        ls_mapper  TYPE zexcel_cell_style.
+
+  DATA: lv_file      TYPE xstring,
+        lv_bytecount TYPE i,
+        lt_file_tab  TYPE solix_tab,
+        lv_buffer    TYPE  xstring.
+
+  DATA: lv_full_path      TYPE string,
+        lv_workdir        TYPE string,
+        lv_file_separator TYPE c.
+
+  CONSTANTS: lc_typekind_string TYPE abap_typekind VALUE cl_abap_typedescr=>typekind_string,
+             lc_typekind_packed TYPE abap_typekind VALUE cl_abap_typedescr=>typekind_packed,
+             lc_typekind_num    TYPE abap_typekind VALUE cl_abap_typedescr=>typekind_num,
+             lc_typekind_date   TYPE abap_typekind VALUE cl_abap_typedescr=>typekind_date,
+             lc_typekind_s_ls   TYPE string VALUE 's_leading_blanks'.
+
+  CONCATENATE pv_file '\' sy-datum '_' sy-uzeit '.xlsx' INTO lv_full_path.
+
+
+  " Creates active sheet
+  CREATE OBJECT lo_excel.
+
+*  CREATE OBJECT lo_border_light.
+*  lo_border_light->border_color-rgb = zcl_excel_style_color=>c_black.
+*  lo_border_light->border_style = zcl_excel_style_border=>c_border_medium.
+
+  " Create color white
+
+
+  " Styles
+  lo_style_title                   = lo_excel->add_new_style( ).
+  lo_style_title->font->bold       = abap_true.
+  lv_style_title_guid              = lo_style_title->get_guid( ).
+
+
+  " Get active sheet
+  lo_worksheet = lo_excel->get_active_worksheet( ).
+*  lo_worksheet->set_title( ip_title = 'Sheet' ).
+
+
+  lv_row = 1.
+  lv_col = 1.
+
+
+  DATA: gt_xlsx           TYPE TABLE OF zexcel_s_export_xls,
+        gs_xlsx           TYPE zexcel_s_export_xls,
+        lv_line           TYPE numc2,
+        lv_row_n          TYPE zexcel_cell_row,
+
+        lv_coluna_08_char TYPE char40,
+        lv_coluna_10_char TYPE char40,
+        lv_coluna_12_char TYPE char40,
+
+        lv_coluna_08_curr TYPE ekpo-netpr,
+        lv_coluna_10_curr TYPE ekpo-netpr,
+        lv_coluna_12_curr TYPE ekpo-netpr,
+
+        lv_coluna_03_char TYPE char40,
+        lv_coluna_24_char TYPE char40,
+        lv_coluna_25_char TYPE char40,
+
+        lv_coluna_08_datm TYPE sy-datum,
+        lv_coluna_10_datm TYPE sy-datum,
+        lv_coluna_12_datm TYPE sy-datum,
+        lv_bool           TYPE boolean,
+        lv_bool_stop      TYPE boolean.
+
+  DATA: ls_ztb_fi_0021   TYPE ztb_fi_0021,
+        ls_ztb_fi_0021_o TYPE ztb_fi_0021,
+        ls_address       LIKE  bapiaddr3,
+        lt_return        LIKE TABLE OF bapiret2,
+        lv_objectid      TYPE  cdhdr-objectid,
+        lv_tcode         TYPE  cdhdr-tcode,
+        lv_utime         TYPE  cdhdr-utime,
+        lv_udate         TYPE  cdhdr-udate,
+        lv_username      TYPE  cdhdr-username.
+
+  DATA: ls_tvarvc TYPE tvarvc.
+
+  LOOP AT pt_line ASSIGNING FIELD-SYMBOL(<fs_line>).
+
+    IF gs_xlsx-coluna_03 IS NOT INITIAL AND lv_bool IS INITIAL AND lv_bool_stop IS INITIAL.
+      lv_bool = abap_true.
+    ENDIF.
+
+    CLEAR gs_xlsx.
+    SPLIT <fs_line> AT ';' INTO
+    gs_xlsx-coluna_01
+    gs_xlsx-coluna_02
+    lv_coluna_03_char
+    gs_xlsx-coluna_04
+    gs_xlsx-coluna_05
+    gs_xlsx-coluna_06
+    gs_xlsx-coluna_07
+    lv_coluna_08_char
+    gs_xlsx-coluna_09
+    lv_coluna_10_char
+    gs_xlsx-coluna_11
+    lv_coluna_12_char
+    gs_xlsx-coluna_13
+    gs_xlsx-coluna_14
+    gs_xlsx-coluna_15
+    gs_xlsx-coluna_16
+    gs_xlsx-coluna_17
+    gs_xlsx-coluna_18
+    gs_xlsx-coluna_19
+    gs_xlsx-coluna_20
+    gs_xlsx-coluna_21
+    gs_xlsx-coluna_22
+    gs_xlsx-coluna_23
+    lv_coluna_24_char
+    lv_coluna_25_char
+    gs_xlsx-coluna_26
+    gs_xlsx-coluna_27
+    gs_xlsx-coluna_28
+    gs_xlsx-coluna_29
+    gs_xlsx-coluna_30.
+
+    IF sy-tabix > 7.
+      PERFORM convert_char_to_curr USING lv_coluna_08_char CHANGING gs_xlsx-coluna_08.
+      PERFORM convert_char_to_curr USING lv_coluna_10_char CHANGING gs_xlsx-coluna_10.
+      PERFORM convert_char_to_curr USING lv_coluna_12_char CHANGING gs_xlsx-coluna_12.
+    ENDIF.
+    PERFORM convert_char_to_datm USING lv_coluna_03_char CHANGING gs_xlsx-coluna_03.
+    PERFORM convert_char_to_datm USING lv_coluna_24_char CHANGING gs_xlsx-coluna_24.
+    PERFORM convert_char_to_datm USING lv_coluna_25_char CHANGING gs_xlsx-coluna_25.
+
+    CONDENSE:
+    gs_xlsx-coluna_01,
+    gs_xlsx-coluna_02,
+    gs_xlsx-coluna_03,
+    gs_xlsx-coluna_04,
+    gs_xlsx-coluna_05,
+    gs_xlsx-coluna_06,
+    gs_xlsx-coluna_07,
+    gs_xlsx-coluna_08,
+    gs_xlsx-coluna_09,
+    gs_xlsx-coluna_10,
+    gs_xlsx-coluna_11,
+    gs_xlsx-coluna_12,
+    gs_xlsx-coluna_13,
+    gs_xlsx-coluna_14,
+    gs_xlsx-coluna_15,
+    gs_xlsx-coluna_16,
+    gs_xlsx-coluna_17,
+    gs_xlsx-coluna_18,
+    gs_xlsx-coluna_19,
+    gs_xlsx-coluna_20,
+    gs_xlsx-coluna_21,
+    gs_xlsx-coluna_22,
+    gs_xlsx-coluna_23,
+    gs_xlsx-coluna_24,
+    gs_xlsx-coluna_25,
+    gs_xlsx-coluna_26,
+    gs_xlsx-coluna_27,
+    gs_xlsx-coluna_28,
+    gs_xlsx-coluna_29,
+    gs_xlsx-coluna_30.
+
+    APPEND gs_xlsx TO gt_xlsx.
+    ADD 1 TO lv_row_n.
+
+
+    IF lv_bool IS INITIAL.
+      lo_worksheet->set_cell( ip_column = 'A'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_01 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'B'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_02 ip_style = lv_style_title_guid ).
+    ELSE.
+      lo_worksheet->set_cell( ip_column = 'A'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_01 ).
+      lo_worksheet->set_cell( ip_column = 'B'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_02 ).
+    ENDIF.
+
+
+    IF gs_xlsx-coluna_03 IS NOT INITIAL.
+      IF gs_xlsx-coluna_03(1) CA sy-abcde OR gs_xlsx-coluna_03+1(1) CA sy-abcde.
+        lo_worksheet->set_cell( ip_column = 'C'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_03 ip_style = lv_style_title_guid ).
+      ELSE.
+        lo_worksheet->set_cell( ip_column = 'C'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_03 ip_abap_type = lc_typekind_date ).
+      ENDIF.
+    ENDIF.
+
+    IF lv_bool IS INITIAL.
+      lo_worksheet->set_cell( ip_column = 'D'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_04 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'E'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_05 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'F'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_06 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'G'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_07 ip_style = lv_style_title_guid ).
+    ELSE.
+      lo_worksheet->set_cell( ip_column = 'D'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_04 ).
+      lo_worksheet->set_cell( ip_column = 'E'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_05 ).
+      lo_worksheet->set_cell( ip_column = 'F'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_06 ).
+      lo_worksheet->set_cell( ip_column = 'G'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_07 ).
+    ENDIF.
+
+    IF gs_xlsx-coluna_08 IS NOT INITIAL.
+      IF gs_xlsx-coluna_08(1) CA sy-abcde OR gs_xlsx-coluna_08+1(1) CA sy-abcde.
+        lo_worksheet->set_cell( ip_column = 'H'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_08 ip_style = lv_style_title_guid ).
+      ELSE.
+        lo_worksheet->set_cell( ip_column = 'H'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_08 ip_abap_type = lc_typekind_packed ).
+      ENDIF.
+    ENDIF.
+
+    IF lv_bool IS INITIAL.
+      lo_worksheet->set_cell( ip_column = 'I'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_09 ip_style = lv_style_title_guid ).
+    ELSE.
+      lo_worksheet->set_cell( ip_column = 'I'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_09 ).
+    ENDIF.
+
+    IF gs_xlsx-coluna_10 IS NOT INITIAL.
+      IF gs_xlsx-coluna_10(1) CA sy-abcde OR gs_xlsx-coluna_10+1(1) CA sy-abcde.
+        lo_worksheet->set_cell( ip_column = 'J'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_10  ip_style = lv_style_title_guid ).
+      ELSE.
+        lo_worksheet->set_cell( ip_column = 'J'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_10 ip_abap_type = lc_typekind_packed ).
+      ENDIF.
+    ENDIF.
+
+    IF lv_bool IS INITIAL.
+      lo_worksheet->set_cell( ip_column = 'K'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_11 ip_style = lv_style_title_guid ).
+    ELSE.
+      lo_worksheet->set_cell( ip_column = 'K'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_11 ).
+    ENDIF.
+
+
+    IF gs_xlsx-coluna_12 IS NOT INITIAL.
+      IF gs_xlsx-coluna_12(1) CA sy-abcde OR gs_xlsx-coluna_12+1(1) CA sy-abcde.
+        lo_worksheet->set_cell( ip_column = 'L'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_12 ip_style = lv_style_title_guid ).
+      ELSE.
+        lo_worksheet->set_cell( ip_column = 'L'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_12 ip_abap_type = lc_typekind_packed ).
+      ENDIF.
+    ENDIF.
+
+
+    IF lv_bool IS INITIAL.
+      lo_worksheet->set_cell( ip_column = 'M'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_13 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'N'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_14 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'O'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_15 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'P'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_16 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'Q'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_17 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'R'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_18 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'S'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_19 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'T'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_20 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'U'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_21 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'V'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_22 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'W'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_23 ip_style = lv_style_title_guid ).
+    ELSE.
+      lo_worksheet->set_cell( ip_column = 'M'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_13 ).
+      lo_worksheet->set_cell( ip_column = 'N'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_14 ).
+      lo_worksheet->set_cell( ip_column = 'O'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_15 ).
+      lo_worksheet->set_cell( ip_column = 'P'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_16 ).
+      lo_worksheet->set_cell( ip_column = 'Q'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_17 ).
+      lo_worksheet->set_cell( ip_column = 'R'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_18 ).
+      lo_worksheet->set_cell( ip_column = 'S'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_19 ).
+      lo_worksheet->set_cell( ip_column = 'T'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_20 ).
+      lo_worksheet->set_cell( ip_column = 'U'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_21 ).
+      lo_worksheet->set_cell( ip_column = 'V'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_22 ).
+      lo_worksheet->set_cell( ip_column = 'W'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_23 ).
+    ENDIF.
+
+    IF gs_xlsx-coluna_24 IS NOT INITIAL.
+      IF gs_xlsx-coluna_24(1) CA sy-abcde OR gs_xlsx-coluna_24+1(1) CA sy-abcde.
+        lo_worksheet->set_cell( ip_column = 'X'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_24  ip_style = lv_style_title_guid ).
+      ELSE.
+        lo_worksheet->set_cell( ip_column = 'X'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_24 ip_abap_type = lc_typekind_date ).
+      ENDIF.
+    ENDIF.
+*    lo_worksheet->set_cell( ip_column = 'X'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_24 ).
+
+    IF gs_xlsx-coluna_25 IS NOT INITIAL.
+      IF gs_xlsx-coluna_25(1) CA sy-abcde OR gs_xlsx-coluna_25+1(1) CA sy-abcde.
+        lo_worksheet->set_cell( ip_column = 'Y'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_25 ip_style = lv_style_title_guid ).
+      ELSE.
+        lo_worksheet->set_cell( ip_column = 'Y'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_25 ip_abap_type = lc_typekind_date ).
+      ENDIF.
+    ENDIF.
+*    lo_worksheet->set_cell( ip_column = 'Y'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_25 ).
+
+    IF lv_bool IS INITIAL.
+      lo_worksheet->set_cell( ip_column = 'Z'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_26 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'AA' ip_row = lv_row_n ip_value = gs_xlsx-coluna_27 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'AB' ip_row = lv_row_n ip_value = gs_xlsx-coluna_28 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'AC' ip_row = lv_row_n ip_value = gs_xlsx-coluna_29 ip_style = lv_style_title_guid ).
+      lo_worksheet->set_cell( ip_column = 'AD' ip_row = lv_row_n ip_value = gs_xlsx-coluna_30 ip_style = lv_style_title_guid ).
+    ELSE.
+      lo_worksheet->set_cell( ip_column = 'Z'  ip_row = lv_row_n ip_value = gs_xlsx-coluna_26 ).
+      lo_worksheet->set_cell( ip_column = 'AA' ip_row = lv_row_n ip_value = gs_xlsx-coluna_27 ).
+      lo_worksheet->set_cell( ip_column = 'AB' ip_row = lv_row_n ip_value = gs_xlsx-coluna_28 ).
+      lo_worksheet->set_cell( ip_column = 'AC' ip_row = lv_row_n ip_value = gs_xlsx-coluna_29 ).
+      lo_worksheet->set_cell( ip_column = 'AD' ip_row = lv_row_n ip_value = gs_xlsx-coluna_30 ).
+    ENDIF.
+
+    IF lv_bool IS NOT INITIAL.
+      lv_bool_stop = abap_true.
+    ENDIF.
+
+  ENDLOOP.
+
+  lo_worksheet->set_show_gridlines( i_show_gridlines = abap_true ).
+
+
+  lo_column = lo_worksheet->get_column( ip_column = 'AP' ).
+  lo_column->set_auto_size( ip_auto_size = abap_true ).
+
+  CREATE OBJECT lo_excel_writer TYPE zcl_excel_writer_2007.
+  lv_file = lo_excel_writer->write_file( lo_excel ).
+
+  " Convert to binary
+  CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+    EXPORTING
+      buffer        = lv_file
+    IMPORTING
+      output_length = lv_bytecount
+    TABLES
+      binary_tab    = lt_file_tab.
+
+*  EXPORT: lv_bytecount  FROM lv_bytecount  TO MEMORY ID 'LV_BYTECOUNT'.
+
+  CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
+    EXPORTING
+      input_length = lv_bytecount
+*     FIRST_LINE   = 0
+*     LAST_LINE    = 0
+    IMPORTING
+      buffer       = lv_buffer
+    TABLES
+      binary_tab   = lt_file_tab
+    EXCEPTIONS
+      failed       = 1
+      OTHERS       = 2.
+
+  DATA       lv_base64     TYPE string.
+
+  " Converte XSTRING -> Base64
+  CALL FUNCTION 'SCMS_BASE64_ENCODE_STR'
+    EXPORTING
+      input  = lv_buffer
+    IMPORTING
+      output = lv_base64.
+
+*  cl_gui_frontend_services=>gui_download( EXPORTING bin_filesize = lv_bytecount
+*                                                    filename     = lv_full_path
+*                                                    filetype     = 'BIN'
+*                                           CHANGING data_tab     = lt_file_tab ).  ....
+
+*lv_full_path      TYPE string,
+
+  gs_zexcel_create_entity-excelfile = lv_buffer.
+  gs_zexcel_create_entity-xstring = lv_buffer.
+  gs_zexcel_create_entity-full_path = lv_full_path.
+  gs_zexcel_create_entity-base_64 = lv_base64.
+
+  EXPORT: lv_bytecount  FROM lv_bytecount  TO MEMORY ID 'LV_BYTECOUNT'.
+  EXPORT: lv_full_path  FROM lv_full_path  TO MEMORY ID 'LV_FULL_PATH'.
+  EXPORT: lt_file_tab   FROM lt_file_tab   TO MEMORY ID 'LT_FILE_TAB'.
+  EXPORT: lv_buffer     FROM lv_buffer     TO MEMORY ID 'LV_BUFFER'.
+  EXPORT: gs_zexcel_create_entity     FROM gs_zexcel_create_entity     TO MEMORY ID 'GS_ZEXCEL_CREATE_ENTITY'.
+
+  CALL FUNCTION 'BAPI_USER_GET_DETAIL'
+    EXPORTING
+      username = sy-uname
+    IMPORTING
+      address  = ls_address
+    TABLES
+      return   = lt_return.
+
+  lv_username = ls_ztb_fi_0021-uname = sy-uname.
+  lv_udate    = ls_ztb_fi_0021-datum = gv_datum.
+  lv_utime    = ls_ztb_fi_0021-uzeit = gv_uzeit.
+  lv_tcode    = ls_ztb_fi_0021-tcode = sy-tcode.
+
+  ls_ztb_fi_0021-mandt = sy-mandt.
+  ls_ztb_fi_0021-repid = sy-repid.
+  ls_ztb_fi_0021-fullname = ls_address-fullname.
+
+  MODIFY ztb_fi_0021 FROM ls_ztb_fi_0021.
+  COMMIT WORK.
+
+  CONCATENATE sy-mandt sy-datum sy-uzeit sy-tcode INTO lv_objectid.
+
+  CALL FUNCTION 'ZO_FI_0001_WRITE_DOCUMENT'
+    EXPORTING
+      objectid        = lv_objectid
+      tcode           = lv_tcode
+      utime           = lv_utime
+      udate           = lv_udate
+      username        = lv_username
+      n_ztb_fi_0021   = ls_ztb_fi_0021
+      o_ztb_fi_0021   = ls_ztb_fi_0021_o
+      upd_ztb_fi_0021 = 'U'.
+
+  IF sy-subrc = 0.
+    COMMIT WORK.
+  ENDIF.
+
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form CONVERT_CHAR_TO_CURR
+*&---------------------------------------------------------------------*
+FORM convert_char_to_curr USING p_in
+                           CHANGING p_out.
+
+  DATA:
+    lv_neg  TYPE c,
+    lv_p_in TYPE char15,
+    lv_curr TYPE ekpo-netpr.
+
+  CHECK p_in IS NOT INITIAL.
+
+
+  IF p_in CO '-0123456789., '.
+
+    " Se a string começar com letras, considera como texto
+    IF p_in(1) CA sy-abcde.
+      p_out = p_in.
+    ELSE.
+      CLEAR: lv_neg, p_out.
+
+      " Verifica se a string contém o sinal negativo
+      IF p_in CA '-'.
+        lv_neg = 'X'.
+      ENDIF.
+
+      lv_p_in = p_in.
+
+      " Remove sinais de negativo, pontos de milhar e substitui vírgulas por ponto decimal
+      REPLACE ALL OCCURRENCES OF '-' IN lv_p_in WITH ''.
+      REPLACE ALL OCCURRENCES OF '.' IN lv_p_in WITH ''.
+      REPLACE ALL OCCURRENCES OF ',' IN lv_p_in WITH '.'.
+
+      " Tenta converter LV_p_IN para número
+      TRY.
+          lv_curr = lv_p_in.
+        CATCH cx_sy_conversion_no_number cx_sy_conversion_overflow.
+          p_out = lv_p_in.
+          RETURN.
+      ENDTRY.
+
+      " Se for negativo, aplica o sinal
+      IF lv_neg IS NOT INITIAL.
+        lv_curr = lv_curr * -1.
+      ENDIF.
+
+      " Passa o valor convertido para p_OUT
+      p_out = lv_curr.
+    ENDIF.
+
+  ELSE.
+    IF p_in = 'Amount in Company Code Currency' OR p_in = 'Amount in Global Currency'      OR p_in = 'Amount in Transaction Currency'
+    OR p_in = 'Montante em moeda da empresa'    OR p_in = 'Montante em moeda do relatório' OR p_in = 'Montante na moeda de transação'.
+      p_out = p_in.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.
+
+
+*&---------------------------------------------------------------------*
+*& Form convert_char_to_DATM
+*&---------------------------------------------------------------------*
+FORM convert_char_to_datm  USING    p_in
+                           CHANGING p_out.
+
+  DATA:
+    lv_p_in TYPE char10.
+
+  CHECK p_in IS NOT INITIAL.
+  IF p_in(1) CA sy-abcde.
+    p_out = p_in.
+  ELSE.
+    CLEAR: p_out.
+    CONCATENATE p_in+6(4) p_in+3(2) p_in(2) INTO p_out.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form zf_busca_retorno
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      <-- LV_FILE
+*&---------------------------------------------------------------------*
+FORM zf_busca_retorno  CHANGING p_retorno.
+
+  DATA:
+    l_path TYPE string,
+    l_len  TYPE n.
+
+  CLEAR: l_path, l_len.
+
+*    DATA: lc_loop.
+*    lc_loop = 0.
+*    WHILE lc_loop EQ 0.
+*    ENDWHILE.
+
+  IF p_retorno IS INITIAL.
+    IF sy-uname = 'GLO_DSILVA'.
+      p_retorno = 'C:\Users\dsilva.globalhitss\Downloads'.
+    ELSE.
+      p_retorno = 'C:\Users\Downloads'.
+    ENDIF.
+  ENDIF.
+
+ENDFORM.

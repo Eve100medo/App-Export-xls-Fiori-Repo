@@ -1,0 +1,26 @@
+@Metadata.layer:#CORE
+@UI.headerInfo: {
+    typeName: 'Item',
+    typeNamePlural: 'Itens'
+    }
+
+     @UI.presentationVariant: [{
+    visualizations: [{ type: #AS_LINEITEM }]
+}]
+
+
+annotate entity Z_FI_I_GLACCOUNTLINEITEM_3
+    with
+{
+    @UI:{
+      lineItem: [
+
+          {   position: 10,
+              value: 'status',
+              criticality: 's_status'
+          }
+      ]
+  }
+  status;
+
+}

@@ -1,0 +1,692 @@
+@AbapCatalog.sqlViewName: 'ZFIGLACLINEIT3'
+@AbapCatalog.compiler.compareFilter: true
+@AbapCatalog.preserveKey: true
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'CDS Views interface '
+@Metadata.ignorePropagatedAnnotations: true
+@ObjectModel.resultSet.sizeCategory: #XS
+@Metadata.allowExtensions: true
+@OData.publish: true
+
+define view Z_FI_I_GLACCOUNTLINEITEM_3
+  as select distinct from I_GLAccountLineItemRawData
+
+    inner join            skat as txt  on  GLAccount = txt.saknr
+
+                                       and txt.spras = 'P'
+
+    inner join            bkpf as BKPF on  AccountingDocument = bkpf.belnr
+
+                                       and CompanyCode        = bkpf.bukrs
+  association [0..1] to I_CompanyCode       as _CompanyCode       on  $projection.s_compy = _CompanyCode.CompanyCode
+
+  association [1..1] to I_BusinessAreaText  as _BusinessArea      on  $projection.s_bussr = _BusinessArea.BusinessArea
+
+  association [1..1] to I_ProfitCenterText  as _ProfitCenter      on  $projection.s_conta  = _ProfitCenter.ControllingArea
+
+                                                                  and $projection.s_profct = _ProfitCenter.ProfitCenter
+
+  association [1..1] to I_CostCenterText    as _CostCenter        on  $projection.s_conta = _CostCenter.ControllingArea
+
+                                                                  and $projection.s_costc = _CostCenter.CostCenter
+
+
+  association [0..1] to I_OffsettingAccount as _OffsettingAccount on  $projection.OffsettingChartOfAccounts = _OffsettingAccount.ChartOfAccounts
+
+                                                                  and $projection.OffsettingAccountType     = _OffsettingAccount.OffsettingAccountType
+
+                                                                  and $projection.OffsettingAccount         = _OffsettingAccount.OffsettingAccount
+
+  association [0..1] to I_Supplier          as _Supplier          on  $projection.Supplier = _Supplier.Supplier
+
+  association [0..1] to ZI_READ_DOMAIN      as _StatusText        on  $projection.status = _StatusText.Status
+{
+
+
+           @UI.lineItem: [{ position: 10 }]
+           @UI.selectionField: [{ position: 10 }]
+           @Consumption.valueHelpDefinition: [
+
+                {
+
+                entity: {name: 'Z_FI_LEDGER_VH_03', element: 's_leadr'},
+
+                additionalBinding: [
+
+                      {
+
+                        parameter: '',
+
+                        localParameter: '',
+
+                        element: 's_compy',
+
+                       localElement: 's_compy',
+
+                        usage: #FILTER_AND_RESULT
+
+                      },
+
+                      {
+
+                       parameter: '',
+
+                        localParameter: '',
+
+                        element: 's_glact',
+
+                        localElement: 's_glact',
+
+                        usage: #FILTER_AND_RESULT
+
+                      }
+
+
+
+                    ]
+
+                 }
+
+                ]
+
+
+                    @Semantics.text: true
+  key      SourceLedger                                        as s_ledger,
+
+
+           @UI.selectionField: [{ position: 20 }]
+           @Consumption.valueHelpDefinition: [
+             {
+               entity: {name: 'Z_FI_COMPANY_VH_3', element: 's_compy'},
+           distinctValues: true,
+               additionalBinding: [
+                 {
+                   parameter: '',
+                   localParameter: '',
+                   element: 's_ledger',
+                   localElement: 's_ledger',
+                   usage: #FILTER_AND_RESULT
+                 },
+                 {
+                   parameter: '',
+                   localParameter: '',
+                   element: 's_glact',
+                   localElement: 's_glact',
+                   usage: #FILTER_AND_RESULT
+                 }
+
+               ]
+             }
+           ]
+
+
+
+           @Semantics.text: true
+  key      CompanyCode                                         as s_compy,
+
+
+  key      FiscalYear                                          as s_fiyer,
+
+           @EndUserText.label: ''
+           @UI.lineItem: [{ position: 50 }]
+           //key cast(AccountingDocument as abap.numc(10)) as s_accdc,
+  key      AccountingDocument                                  as s_accdc,
+  key      LedgerGLLineItem                                    as s_ledgl,
+
+
+           @EndUserText.label     : 'Empresa'
+           @UI.lineItem: [{ position: 20 }]
+           @ObjectModel.text.element: ['s_compy']
+           _CompanyCode.CompanyCodeName                        as TextCompany,
+           @EndUserText.label     : 'Divisão'
+           @UI.lineItem: [{ position: 30 }]
+           @ObjectModel.text.element: ['s_bussr']
+           _BusinessArea.BusinessAreaName                      as TextBussiness,
+
+           @EndUserText.label     : 'Centro de Lucro'
+           @UI.lineItem: [{ position: 180 }]
+           @ObjectModel.text.element: ['s_profct']
+           _ProfitCenter.ProfitCenterName                      as Profitrname,
+
+           @EndUserText.label     : 'Centro de Custo'
+           @UI.lineItem: [{ position: 190 }]
+           @ObjectModel.text.element: ['s_costc']
+           _CostCenter.CostCenterName                          as Costname,
+
+           @EndUserText.label     : 'Cta.contrapartida'
+           @UI.lineItem: [{ position: 240 }]
+           @ObjectModel.text.element: ['s_offac']
+           _OffsettingAccount.OffsettingAccountName            as OffsettingName,
+
+           @EndUserText.label: 'Conta da Razão'
+           @UI.selectionField: [{ position: 30 }]
+           @UI.lineItem: [{ position: 60 }]
+           @Consumption.valueHelpDefinition: [
+           {
+           entity: {name: 'Z_FI_GLACCOUNT_VH_3', element: 's_glact'},
+           distinctValues: true,
+           additionalBinding: [
+           {
+             parameter: '',
+             localParameter: '',
+             element: 's_ledger',
+             localElement: 's_ledger',
+             usage: #FILTER_AND_RESULT
+           },
+           {
+             parameter: '',
+             localParameter: '',
+             element: 's_compy',
+             localElement: 's_compy',
+             usage: #FILTER_AND_RESULT
+           }
+
+           ]
+           }
+           ]
+
+           // cast(GLAccount  as abap.char(10))                                as s_glact,
+           GLAccount                                           as s_glact,
+
+           LedgerFiscalYear                                    as s_ldgfy,
+
+           @UI.selectionField: [{ position: 40 }]
+           @UI.lineItem: [{ position: 40 }]
+
+           @Consumption.filter: {
+               selectionType: #INTERVAL, // Permite intervalos de datas
+               mandatory: false
+           }
+           PostingDate                                         as s_psdat,
+           @Semantics.text: true
+           BusinessArea                                        as s_bussr,
+
+
+           AssignmentReference                                 as s_asingr,
+
+           @EndUserText.label     : 'Denominação Longa da conta do Razão'
+           @UI.lineItem: [{ position: 70 }]
+
+           txt.txt50                                           as s_glacln,
+
+           @UI.lineItem: [{ position: 80 }]
+
+           @EndUserText.label     : 'Txt.it.partida indv.'
+           DocumentItemText                                    as s_doctxt,
+
+           @UI.lineItem: [{ position: 90 }]
+           AmountInCompanyCodeCurrency                         as s_amincc,
+
+           @UI.lineItem: [{ position: 100 }]
+           CompanyCodeCurrency                                 as s_comcr,
+           @UI.lineItem: [{ position: 110 }]
+           AmountInGlobalCurrency                              as s_amtgc,
+           @UI.lineItem: [{ position: 120 }]
+           GlobalCurrency                                      as s_glocr,
+           @UI.lineItem: [{ position: 130 }]
+           AmountInTransactionCurrency                         as s_amttr,
+           @UI.lineItem: [{ position: 140 }]
+           TransactionCurrency                                 as s_trncr,
+           @UI.lineItem: [{ position: 150 }]
+           AccountingDocumentType                              as s_acdoct,
+           @UI.lineItem: [{ position: 160 }]
+           PostingKey                                          as s_PostK,
+           @UI.lineItem: [{ position: 170 }]
+           PartnerBusinessArea                                 as s_partb,
+           @Semantics.text: true
+           ProfitCenter                                        as s_profct,
+           @Semantics.text: true
+           CostCenter                                          as s_costc,
+           @UI.lineItem: [{ position: 210 }]
+           Supplier                                            as s_suppl,
+           @UI.lineItem: [{ position: 220 }]
+           @EndUserText.label     : 'Nome de fornecedor'
+           _Supplier.SupplierName                              as s_nsupl,
+           @EndUserText.label     : 'Nº ref.estorno'
+           @UI.lineItem: [{ position: 230 }]
+           BKPF.stblg                                          as s_stblg,
+           @Semantics.text: true
+           //cast(OffsettingAccount as abap.char(10))            as s_offac,
+           OffsettingAccount  as s_offac,
+           @UI.lineItem: [{ position: 250 }]
+           AccountingDocCreatedByUser                          as s_acdcbu,
+           @EndUserText.label     : 'Dt.criação lçto.contábil na hr.servidor'
+           @UI.lineItem: [{ position: 260 }]
+           BKPF.cpudt                                          as s_cpudt,
+           @UI.lineItem: [{ position: 270 }]
+           ClearingDate                                        as s_clerdt,
+           @UI.lineItem: [{ position: 280 }]
+          // cast(ClearingAccountingDocument as abap.char( 10 )) as s_clrac,
+           ClearingAccountingDocument as s_clrac,
+           @UI.lineItem: [{ position: 290 }]
+           OrderID                                             as s_ordid,
+
+           TaxCode                                             as s_txcode,
+
+           @UI.selectionField: [{ position: 50 }]
+           @EndUserText.label     :'Status'
+           // @UI.selectionField: [{ position: 40 }]
+           @Consumption.valueHelpDefinition: [{ entity:
+
+           {name: 'ZI_READ_DOMAIN_3' , element: 'Status' },
+
+           distinctValues: true
+
+           }]
+           case ClearingDate
+           when '00000000'
+           then 1
+           else 3
+           end                                                 as s_status,
+
+
+           case ClearingDate
+           when '#' then ''
+           else ''
+           end                                                 as status,
+
+
+
+           OffsettingAccountType                               as s_offat,
+
+           ControllingArea                                     as s_conta,
+           FinancialTransactionType                            as s_fintr,
+           // BusinessTransactionType                  as s_bustr,
+           //ControllingBusTransacType                as s_cobtr,
+           ReferenceDocumentType                               as s_refdt,
+           cast(LogicalSystem as abap.char(10))                as s_logsy,
+           ReferenceDocumentContext                            as s_refdc,
+           // ReferenceDocument                        as s_refdo,
+           //ReferenceDocumentItem                    as s_refdi,
+           ReferenceDocumentItemGroup                          as s_refdg,
+           TransactionSubitem                                  as s_trxsi,
+           // IsReversal                               as s_isrev,
+           ReversalReferenceDocumentCntxt                      as s_rvref,
+           ReversalReferenceDocument                           as s_rvdoc,
+           IsSettlement                                        as s_isset,
+           IsSettled                                           as s_isstl,
+           PredecessorReferenceDocType                         as s_prdct,
+           PredecessorReferenceDocCntxt                        as s_prdco,
+           cast(PredecessorReferenceDocument as abap.char(10)) as s_prddo,
+           PredecessorReferenceDocItem                         as s_prddi,
+           PrdcssrJournalEntryCompanyCode                      as s_prjcc,
+           //PrdcssrJournalEntryFiscalYear            as s_prjfy,
+           //PredecessorJournalEntry                  as s_prdje,
+           PredecessorJournalEntryItem                         as s_prdji,
+           SourceReferenceDocumentType                         as s_srdct,
+           //SourceLogicalSystem                      as s_srlog,
+
+
+           // SourceReferenceDocument                  as s_srdoc,
+           SourceReferenceDocumentItem                         as s_srdci,
+           SourceReferenceDocSubitem                           as s_srdcs,
+           IsCommitment                                        as s_iscom,
+           JrnlEntryItemObsoleteReason                         as s_jriei,
+           JrnlPeriodEndClosingRunLogUUID                      as s_jpecr,
+           OrganizationalChange                                as s_orgch,
+
+           FunctionalArea                                      as s_funca,
+
+           //PartnerCostCenter                        as s_partc,
+           //PartnerProfitCenter                      as s_partp,
+           PartnerFunctionalArea                               as s_partf,
+
+           //PartnerSegment                           as s_parts,
+           BalanceTransactionCurrency                          as s_baltr,
+           AmountInBalanceTransacCrcy                          as s_amtbt,
+
+           // LedgerFiscalYear,
+           GLRecordType,
+           ChartOfAccounts,
+           ControllingArea,
+           FinancialTransactionType,
+           BusinessTransactionType,
+           ControllingBusTransacType,
+           //ReferenceDocumentType,
+           //LogicalSystem,
+           ReferenceDocumentContext,
+           // ReferenceDocument,
+           //ReferenceDocumentItem,
+           ReferenceDocumentItemGroup,
+           TransactionSubitem,
+           //IsReversal,
+           //IsReversed,
+           ReversalReferenceDocumentCntxt,
+           // ReversalReferenceDocument,
+           IsSettlement,
+           IsSettled,
+           PredecessorReferenceDocType,
+           PredecessorReferenceDocCntxt,
+           //PredecessorReferenceDocument,
+           PredecessorReferenceDocItem,
+           PrdcssrJournalEntryCompanyCode,
+           // PrdcssrJournalEntryFiscalYear,
+           // PredecessorJournalEntry,
+           PredecessorJournalEntryItem,
+           SourceReferenceDocumentType,
+           //SourceLogicalSystem,
+           SourceReferenceDocumentCntxt,
+           //SourceReferenceDocument,
+           SourceReferenceDocumentItem,
+           SourceReferenceDocSubitem,
+           IsCommitment,
+           JrnlEntryItemObsoleteReason,
+           JrnlPeriodEndClosingRunLogUUID,
+           OrganizationalChange,
+           //GLAccount,
+           //CostCenter,
+           // ProfitCenter,
+           FunctionalArea,
+           BusinessArea,
+           // PartnerCostCenter,
+           // PartnerProfitCenter,
+           PartnerFunctionalArea,
+           PartnerBusinessArea,
+           // PartnerCompany,
+           // PartnerSegment,
+           BalanceTransactionCurrency,
+           AmountInBalanceTransacCrcy,
+           TransactionCurrency,
+           AmountInTransactionCurrency,
+           CompanyCodeCurrency,
+           AmountInCompanyCodeCurrency,
+           GlobalCurrency,
+           AmountInGlobalCurrency,
+           FreeDefinedCurrency1,
+           AmountInFreeDefinedCurrency1,
+           FreeDefinedCurrency2,
+           AmountInFreeDefinedCurrency2,
+           FreeDefinedCurrency3,
+           AmountInFreeDefinedCurrency3,
+           FreeDefinedCurrency4,
+           AmountInFreeDefinedCurrency4,
+           FreeDefinedCurrency5,
+           AmountInFreeDefinedCurrency5,
+           FreeDefinedCurrency6,
+           AmountInFreeDefinedCurrency6,
+           FreeDefinedCurrency7,
+           AmountInFreeDefinedCurrency7,
+           FreeDefinedCurrency8,
+           AmountInFreeDefinedCurrency8,
+           FixedAmountInGlobalCrcy,
+           GrpValnFixedAmtInGlobCrcy,
+           PrftCtrValnFxdAmtInGlobCrcy,
+           FixedAmountInCoCodeCrcy,
+           TotalPriceVarcInGlobalCrcy,
+           GrpValnTotPrcVarcInGlobCrcy,
+           PrftCtrValnTotPrcVarcInGlbCrcy,
+           FixedPriceVarcInGlobalCrcy,
+           GrpValnFixedPrcVarcInGlobCrcy,
+           PrftCtrValnFxdPrcVarcInGlbCrcy,
+           ControllingObjectCurrency,
+           AmountInObjectCurrency,
+           GrantCurrency,
+           AmountInGrantCurrency,
+           //  BaseUnit,
+           Quantity,
+           FixedQuantity,
+           //  CostSourceUnit,
+           ValuationQuantity,
+           ValuationFixedQuantity,
+           /*  ReferenceQuantityUnit,
+             ReferenceQuantity,
+             AdditionalQuantity1Unit,
+             AdditionalQuantity1,
+             AdditionalQuantity2Unit,
+             AdditionalQuantity2,
+             AdditionalQuantity3Unit,
+             AdditionalQuantity3,*/
+           DebitCreditCode,
+           FiscalPeriod,
+           FiscalYearVariant,
+           FiscalYearPeriod,
+           // OffsettingAccountingAccount  ,
+           OffsettingAccount,
+
+           OffsettingAccountType,
+           OffsettingChartOfAccounts,
+           Supplier
+           /* PostingDate,
+            DocumentDate,
+            AccountingDocumentType,
+            AccountingDocumentItem,
+            AssignmentReference,
+            AccountingDocumentCategory,
+            PostingKey,
+            TransactionTypeDetermination,
+            SubLedgerAcctLineItemType,
+            AccountingDocCreatedByUser,
+            LastChangeDateTime,
+            CreationDateTime,
+            CreationDate,
+            EliminationProfitCenter,
+            OriginObjectType,
+            GLAccountType,
+            AlternativeGLAccount,
+            CountryChartOfAccounts,
+            ItemIsSplit,
+            InvoiceReference,
+            InvoiceReferenceFiscalYear,
+            FollowOnDocumentType,
+            InvoiceItemReference,
+            ReferencePurchaseOrderCategory,
+           // PurchasingDocument,
+           //cast(PurchasingDocument as abap.char(10)) ,
+            PurchasingDocumentItem,
+            AccountAssignmentNumber,
+            DocumentItemText,
+            SalesDocument,
+            SalesDocumentItem,
+            Product,
+            Plant,
+            Supplier,
+            Customer,
+            ServicesRenderedDate,
+            PerformancePeriodStartDate,
+            PerformancePeriodEndDate,
+            ConditionContract,
+            ExchangeRateDate,
+            FinancialAccountType,
+            SpecialGLCode,
+            TaxCode,
+            TaxCountry,
+            HouseBank,
+            HouseBankAccount,
+            IsOpenItemManaged,
+            ClearingDate,
+            ClearingAccountingDocument,
+            ClearingDocFiscalYear,
+            ValueDate,
+            AssetDepreciationArea,
+            MasterFixedAsset,
+            FixedAsset,
+            AssetValueDate,
+            AssetTransactionType,
+            AssetAcctTransClassfctn,
+            DepreciationFiscalPeriod,
+            GroupMasterFixedAsset,
+            GroupFixedAsset,
+            AssetClass,
+            CostEstimate,
+            InventorySpecialStockValnType,
+            InventorySpecialStockType,
+            InventorySpclStkSalesDocument,
+            InventorySpclStkSalesDocItm,
+            InvtrySpclStockWBSElmntIntID,
+            InventorySpclStockWBSElement,
+            InventorySpecialStockSupplier,
+            InventoryValuationType,
+            ValuationArea,
+            SenderCompanyCode,
+            SenderGLAccount,
+            SenderAccountAssignment,
+            SenderAccountAssignmentType,
+            ControllingObject,
+            CostOriginGroup,
+            OriginSenderObject,
+            //ControllingDebitCreditCode,
+           // OriginCtrlgDebitCreditCode,
+            ControllingObjectDebitType,
+            QuantityIsIncomplete,
+            OffsettingAccount,
+            OffsettingAccountType,
+            OffsettingChartOfAccounts,
+            LineItemIsCompleted,
+            PersonnelNumber,
+            ControllingObjectClass,
+          //  PartnerCompanyCode,
+            PartnerControllingObjectClass,
+            OriginProfitCenter,
+            OriginCostCtrActivityType,
+            OriginCostCenter,
+            OriginProduct,
+            VarianceOriginGLAccount,
+            AccountAssignment,
+            AccountAssignmentType,
+            CostCtrActivityType,
+            OrderID,
+            OrderCategory,
+            WBSElementInternalID,
+            WBSElement,
+            PartnerWBSElementInternalID,
+            PartnerWBSElement,
+            ProjectInternalID,
+            Project,
+            PartnerProjectInternalID,
+            PartnerProject,
+            OperatingConcern,
+            ProjectNetwork,
+            RelatedNetworkActivity,
+            BusinessProcess,
+            CostObject,
+            BillableControl,
+            CostAnalysisResource,
+            CustomerServiceNotification,
+            ServiceDocumentType,
+            ServiceDocument,
+            ServiceDocumentItem,
+            PartnerServiceDocumentType,
+            PartnerServiceDocument,
+            PartnerServiceDocumentItem,
+            ServiceContractType,
+            ServiceContract,
+            ServiceContractItem,
+            BusinessSolutionOrder,
+            BusinessSolutionOrderItem,
+            TimeSheetOvertimeCategory,
+            PartnerAccountAssignment,
+            PartnerAccountAssignmentType,
+            WorkPackage,
+            WorkItem,
+            PartnerCostCtrActivityType,
+            PartnerOrder,
+            PartnerOrderCategory,
+            PartnerSalesDocument,
+            PartnerSalesDocumentItem,
+            PartnerProjectNetwork,
+            PartnerProjectNetworkActivity,
+            PartnerBusinessProcess,
+            PartnerCostObject,
+            ControllingDocumentItem,
+            BillingDocumentType,
+            SalesOrganization,
+            DistributionChannel,
+            OrganizationDivision,
+            SoldProduct,
+            SoldProductGroup,
+            CustomerGroup,
+            CustomerSupplierCountry,
+            CustomerSupplierIndustry,
+            SalesDistrict,
+            BillToParty,
+            ShipToParty,
+            CustomerSupplierCorporateGroup,
+            CashLedgerCompanyCode,
+            CashLedgerAccount,
+            FinancialManagementArea,
+            FundsCenter,
+            FundedProgram,
+            Fund,
+            GrantID,
+            BudgetPeriod,
+            PartnerFund,
+            PartnerGrant,
+            PartnerBudgetPeriod,
+            PubSecBudgetAccount,
+            PubSecBudgetAccountCoCode,
+            PubSecBudgetCnsmpnDate,
+            PubSecBudgetCnsmpnFsclPeriod,
+            PubSecBudgetCnsmpnFsclYear,
+            PubSecBudgetIsRelevant,
+            PubSecBudgetCnsmpnType,
+            PubSecBudgetCnsmpnAmtType,
+            SponsoredProgram,
+            SponsoredClass,
+            JointVenture,
+            JointVentureEquityGroup,
+            JointVentureCostRecoveryCode,
+            JointVenturePartner,
+            JointVentureBillingType,
+            JointVentureEquityType,
+            JointVentureProductionDate,
+            JointVentureBillingDate,
+            JointVentureOperationalDate,
+            CutbackRun,
+            JointVentureAccountingActivity,
+            PartnerVenture,
+            PartnerEquityGroup,
+            SenderCostRecoveryCode,
+            CutbackAccount,
+            CutbackCostObject,
+            REBusinessEntity,
+            RealEstateBuilding,
+            RealEstateProperty,
+            RERentalObject,
+            RealEstateContract,
+            REServiceChargeKey,
+            RESettlementUnitID,
+            SettlementReferenceDate,
+            REPartnerBusinessEntity,
+            RealEstatePartnerBuilding,
+            RealEstatePartnerProperty,
+            REPartnerRentalObject,
+            RealEstatePartnerContract,
+            REPartnerServiceChargeKey,
+            REPartnerSettlementUnitID,
+            PartnerSettlementReferenceDate,
+            AccrualObjectType,
+            AccrualObject,
+            AccrualSubobject,
+            AccrualItemType,
+            AccrualValueDate,
+            FinancialValuationObjectType,
+            FinancialValuationObject,
+            FinancialValuationSubobject,
+            NetDueDate,
+            CreditRiskClass,
+            WorkCenterInternalID,
+            OrderOperation,
+            OrderItem,
+            PartnerOrderItem,
+            OrderSuboperation,
+            Equipment,
+         //FunctionalLocation,
+            Assembly,
+            MaintenanceActivityType,
+            MaintenanceOrderPlanningCode,
+            MaintPriorityType,
+            MaintPriority,
+            SuperiorOrder,
+            ProductGroup,
+            MaintenanceOrderIsPlanned*/
+
+
+
+
+
+
+
+
+
+
+  }

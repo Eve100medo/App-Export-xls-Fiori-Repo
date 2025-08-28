@@ -1,0 +1,70 @@
+  method ZPRIO_EXPORT_FIL_CREATE_ENTITY.
+
+  DATA: ls_request_input_data TYPE zcl_zprio_export_xls_mpc=>ts_zprio_export_filter,
+          ls_accountebgs        TYPE zacc_es_filters,
+          wa_accountebgs        TYPE zacc_es_filters,
+          ls_response           TYPE zcl_zprio_export_xls_mpc=>ts_zprio_export_filter,
+          ls_create_entity      TYPE zexcel_create_entitys.
+
+    FIELD-SYMBOLS <fs_entity> TYPE any .
+
+    DATA ls_item TYPE z_fi_i_glaccountlineitem_3.
+
+    DATA:
+      s_compy_stg             TYPE string,
+      s_glact_stg             TYPE string,
+      s_ledger_stg            TYPE string,
+      s_psdat_stg             TYPE string,
+      s_status_stg            TYPE string,
+      lv_full_path            TYPE string,
+      lv_file                 TYPE xstring,
+      lv_bytecount            TYPE i,
+      lv_filelength           TYPE  i,
+      lt_file_tab             TYPE solix_tab,
+      lv_buffer               TYPE  xstring,
+      lr_entity               TYPE REF TO data,
+      lv_base64               TYPE string,
+      gs_zexcel_create_entity TYPE zexcel_create_entitys.
+
+    io_data_provider->read_entry_data( IMPORTING es_data = ls_request_input_data ).
+    s_compy_stg   = ls_request_input_data-s_compy.
+    s_glact_stg   = ls_request_input_data-s_glact.
+    s_ledger_stg  = ls_request_input_data-s_ledger.
+    s_psdat_stg   = ls_request_input_data-s_psdat.
+    s_status_stg  = ls_request_input_data-s_status.
+*
+*    DATA: lc_loop.
+*    lc_loop = 0.
+*    WHILE lc_loop EQ 0.
+*    ENDWHILE.
+
+    CALL FUNCTION 'ZFM_EXPORT_XLS_2'
+      IMPORTING
+        e_bytecount = lv_bytecount
+        e_full_path = lv_full_path
+        e_buffer    = lv_buffer
+      TABLES
+        et_file_tab = lt_file_tab
+      CHANGING
+        s_compy_c   = s_compy_stg
+        s_glact_c   = s_glact_stg
+        s_ledger_c  = s_ledger_stg
+        s_psdat_c   = s_psdat_stg
+        s_status_c  = s_status_stg.
+
+    IMPORT: lv_bytecount   TO lv_bytecount  FROM MEMORY ID 'LV_BYTECOUNT'.
+    IMPORT: lv_full_path   TO lv_full_path  FROM MEMORY ID 'LV_FULL_PATH'.
+    IMPORT: lt_file_tab    TO lt_file_tab   FROM MEMORY ID 'LT_FILE_TAB'.
+    IMPORT: lv_buffer      TO lv_buffer     FROM MEMORY ID 'LV_BUFFER'.
+    IMPORT: gs_zexcel_create_entity      TO gs_zexcel_create_entity     FROM MEMORY ID 'GS_ZEXCEL_CREATE_ENTITY'.
+
+
+    IF gs_zexcel_create_entity IS NOT INITIAL.
+      gs_zexcel_create_entity-excelfile = gs_zexcel_create_entity-base_64.
+      gs_zexcel_create_entity-excelfile = gs_zexcel_create_entity-xstring.
+      MOVE-CORRESPONDING gs_zexcel_create_entity TO er_entity.
+    ENDIF.
+
+
+
+  endmethod.

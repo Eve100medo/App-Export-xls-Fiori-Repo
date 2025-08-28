@@ -1,0 +1,42 @@
+Método if_rap_query_provider~select    
+
+METHOD if_rap_query_provider~select.
+    DATA:
+      lt_data        TYPE TABLE OF zi_domain_fix_val_3,
+      lo_request     TYPE REF TO if_rap_query_request,
+      lo_response    TYPE REF TO if_rap_query_response,
+      lt_filters     TYPE if_rap_query_filter=>tt_name_range_pairs,
+      ls_filter      TYPE if_rap_query_filter=>TY_NAME_RANGE_PAIRS,
+      lv_domain_name TYPE domname.
+
+    "--- Pegar os filtros que vieram do request
+    lt_filters = io_request->get_filter( )->get_as_ranges( ).
+
+    " Procurar filtro pelo campo DOMAIN_NAME (definido na CDS)
+    READ TABLE lt_filters WITH KEY name = 'DOMAIN_NAME' INTO ls_filter.
+    IF sy-subrc = 0 AND ls_filter-range IS NOT INITIAL.
+      lv_domain_name = ls_filter-range[ 1 ]-low.
+    ELSE.
+      " Se não passou domínio → retorna vazio
+      io_response->set_total_number_of_records( 0 ).
+      io_response->set_data( lt_data ).
+      "io_response->set_data( VALUE #( ) ).
+      RETURN.
+    ENDIF.
+
+    "--- Buscar valores do domínio na DD07T
+    SELECT domname,
+           valpos,
+           domval_ld AS low,
+           domval_hd AS high,
+           ddtext    AS description
+      FROM dd07t
+      INTO TABLE @lt_data
+      WHERE domname = @lv_domain_name
+        AND ddlanguage = @sy-langu.
+
+    "--- Retornar para o RAP
+    io_response->set_data( lt_data ).
+    io_response->set_total_number_of_records( lines( lt_data ) ).
+
+  ENDMETHOD.

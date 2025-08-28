@@ -1,0 +1,18 @@
+@EndUserText.label: 'Custom Entity'
+@ObjectModel.query.implementedBy: 'ABAP:ZCL_GET_DOMAIN_FIX_VAL3'
+define custom entity ZI_DOMAIN_FIX_VAL_3
+
+{
+
+     // @EndUserText.label     : 'status'
+    @UI.hidden                  : true
+key domain_name             : z_ad_object_name03;
+    @UI.hidden                  : true
+key pos                     : abap.numc( 4 );
+    @EndUserText.label          : 'lower_limit'
+    low                         : abap.char( 10 );
+    @EndUserText.label          : 'upper_limit'
+    high                        : abap.char( 10 );
+    @EndUserText.label          : 'Description'
+    description                 : abap.char( 60 );
+}
