@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:sap="http://www.sap.com/Protocols/SAPData">
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_COMMON',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_CAPABILITIES',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="Org.OData.Capabilities.V1" Alias="Capabilities"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_COMMUNICATION',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="com.sap.vocabularies.Communication.v1" Alias="Communication"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_AGGREGATION',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="Org.OData.Aggregation.V1" Alias="Aggregation"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_PERSONALDATA',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="com.sap.vocabularies.PersonalData.v1" Alias="PersonalData"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_VALIDATION',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="Org.OData.Validation.V1" Alias="Validation"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_ANALYTICS',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="com.sap.vocabularies.Analytics.v1" Alias="Analytics"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_MEASURES',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="Org.OData.Measures.V1" Alias="Measures"/>
+    </edmx:Reference>
+    <edmx:Reference Uri="./sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_UI',Version='0001',SAP__Origin='LOCAL')/$value" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+        <edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI"/>
+    </edmx:Reference>
+    <edmx:DataServices m:DataServiceVersion="2.0">
+        <Schema Namespace="Z_FI_I_GLACCOUNTLINEITEM_2_CDS" xml:lang="pt" sap:schema-version="1" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+            <EntityType Name="ZI_READ_DOMAIN_03Type" sap:label="Domínio Read" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="Status"/>
+                </Key>
+                <Property Name="Status" Type="Edm.String" Nullable="false" MaxLength="3" sap:display-format="UpperCase" sap:text="Text" sap:label="Campo de Status"/>
+                <Property Name="Text" Type="Edm.String" MaxLength="60" sap:label="Descrição breve" sap:quickinfo="Texto breve para valores fixos"/>
+            </EntityType>
+            <EntityType Name="Z_FI_COMPANY_VH_03Type" sap:label="Value Help do campo  s_compy" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="s_compy"/>
+                </Key>
+                <Property Name="s_compy" Type="Edm.String" Nullable="false" MaxLength="4" sap:display-format="UpperCase" sap:label="Empresa"/>
+                <Property Name="s_ledger" Type="Edm.String" MaxLength="2" sap:display-format="UpperCase" sap:label="Ledger fonte"/>
+                <Property Name="CompanyName" Type="Edm.String" MaxLength="25" sap:label="Nome da firma" sap:quickinfo="Denominação da firma ou empresa"/>
+                <Property Name="City" Type="Edm.String" MaxLength="25" sap:label="Local"/>
+                <Property Name="Country" Type="Edm.String" MaxLength="3" sap:display-format="UpperCase" sap:label="Chave do país"/>
+                <Property Name="Currency" Type="Edm.String" MaxLength="5" sap:label="Moeda" sap:quickinfo="Código da moeda" sap:semantics="currency-code"/>
+                <Property Name="Language" Type="Edm.String" MaxLength="2" sap:label="Código de idioma"/>
+            </EntityType>
+            <EntityType Name="Z_FI_GLACCOUNT_VH_03Type" sap:label="Value Help do campo  s_glact" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="s_glact"/>
+                </Key>
+                <Property Name="s_glact" Type="Edm.String" Nullable="false" MaxLength="10" sap:display-format="UpperCase" sap:label="Conta da Razão" sap:quickinfo="Conta do Razão"/>
+            </EntityType>
+            <EntityType Name="Z_FI_I_GLACCOUNTLINEITEM_2Type" sap:label="Cds de interface" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="s_ledger"/>
+                    <PropertyRef Name="s_compy"/>
+                    <PropertyRef Name="s_fiyer"/>
+                    <PropertyRef Name="s_accdc"/>
+                    <PropertyRef Name="s_ledgl"/>
+                </Key>
+                <Property Name="s_ledger" Type="Edm.String" Nullable="false" MaxLength="2" sap:display-format="UpperCase" sap:label="Ledger fonte" sap:value-list="standard"/>
+                <Property Name="s_compy" Type="Edm.String" Nullable="false" MaxLength="4" sap:display-format="UpperCase" sap:label="Empresa" sap:value-list="standard"/>
+                <Property Name="s_fiyer" Type="Edm.String" Nullable="false" MaxLength="4" sap:display-format="NonNegative" sap:label="Exercício"/>
+                <Property Name="s_accdc" Type="Edm.String" Nullable="false" MaxLength="10" sap:display-format="UpperCase" sap:label="Lançamento contábil" sap:heading=""/>
+                <Property Name="s_ledgl" Type="Edm.String" Nullable="false" MaxLength="6" sap:display-format="UpperCase" sap:label="Item part.individual" sap:quickinfo="Item de partida individual de ledger"/>
+                <Property Name="TextCompany" Type="Edm.String" MaxLength="25" sap:text="s_compy" sap:label="Empresa" sap:quickinfo="Denominação da firma ou empresa"/>
+                <Property Name="TextBussiness" Type="Edm.String" MaxLength="30" sap:text="s_bussr" sap:label="Divisão" sap:quickinfo="Descrição da divisão"/>
+                <Property Name="Profitrname" Type="Edm.String" MaxLength="20" sap:text="s_profct" sap:label="Centro de Lucro" sap:quickinfo="Descrição do centro de lucro"/>
+                <Property Name="Costname" Type="Edm.String" MaxLength="20" sap:text="s_costc" sap:label="Centro de Custo" sap:quickinfo="Nome do centro de custo"/>
+                <Property Name="OffsettingName" Type="Edm.String" MaxLength="80" sap:text="s_offac" sap:label="Cta.contrapartida" sap:quickinfo="Nome da conta de contrapartida"/>
+                <Property Name="s_glact" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Conta da Razão" sap:quickinfo="Conta do Razão" sap:value-list="standard"/>
+                <Property Name="s_ldgfy" Type="Edm.String" MaxLength="4" sap:display-format="NonNegative" sap:label="ExF ledger" sap:quickinfo="Exercício fiscal do ledger"/>
+                <Property Name="s_psdat" Type="Edm.DateTime" Precision="0" sap:display-format="Date" sap:filter-restriction="interval" sap:required-in-filter="false" sap:label="Data de lançamento"/>
+                <Property Name="s_bussr" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Divisão"/>
+                <Property Name="s_asingr" Type="Edm.String" MaxLength="18" sap:label="Atribuição"/>
+                <Property Name="s_glacln" Type="Edm.String" MaxLength="50" sap:label="Denominação Longa da conta do Razão" sap:quickinfo="Texto descritivo das contas do Razão"/>
+                <Property Name="s_doctxt" Type="Edm.String" MaxLength="50" sap:label="Txt.it.partida indv." sap:quickinfo="Texto de item"/>
+                <Property Name="s_amincc" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.moeda empresa" sap:quickinfo="Montante em moeda da empresa"/>
+                <Property Name="s_comcr" Type="Edm.String" MaxLength="5" sap:label="Moeda da empresa" sap:semantics="currency-code"/>
+                <Property Name="s_amtgc" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.moeda relat." sap:quickinfo="Montante em moeda do relatório"/>
+                <Property Name="s_glocr" Type="Edm.String" MaxLength="5" sap:label="Moeda do relatório" sap:semantics="currency-code"/>
+                <Property Name="s_amttr" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.moeda transação" sap:quickinfo="Montante na moeda de transação"/>
+                <Property Name="s_trncr" Type="Edm.String" MaxLength="5" sap:label="Moeda da transação" sap:semantics="currency-code"/>
+                <Property Name="s_acdoct" Type="Edm.String" MaxLength="2" sap:display-format="UpperCase" sap:label="Tipo lçto.contábil" sap:quickinfo="Tipo de lançamento contábil"/>
+                <Property Name="s_PostK" Type="Edm.String" MaxLength="2" sap:display-format="UpperCase" sap:label="Chave de lançamento"/>
+                <Property Name="s_partb" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Divisão do parceiro"/>
+                <Property Name="s_profct" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Centro de lucro"/>
+                <Property Name="s_costc" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Centro de custo"/>
+                <Property Name="s_suppl" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Fornecedor"/>
+                <Property Name="s_nsupl" Type="Edm.String" MaxLength="80" sap:label="Nome de fornecedor"/>
+                <Property Name="s_stblg" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Nº ref.estorno" sap:quickinfo="Nº documento de estorno"/>
+                <Property Name="s_offac" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Cta.contrapartida" sap:quickinfo="Conta de contrapartida"/>
+                <Property Name="s_acdcbu" Type="Edm.String" MaxLength="12" sap:label="PI criada por" sap:quickinfo="Nome do usuário que criou a partida individual"/>
+                <Property Name="s_cpudt" Type="Edm.DateTime" Precision="0" sap:display-format="Date" sap:label="Dt.criação lçto.contábil na hr.servidor" sap:quickinfo="Data da entrada do documento contábil"/>
+                <Property Name="s_clerdt" Type="Edm.DateTime" Precision="0" sap:display-format="Date" sap:label="Data de compensação"/>
+                <Property Name="s_clrac" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Lançto.compensação" sap:quickinfo="Lançamento contábil de compensação"/>
+                <Property Name="s_ordid" Type="Edm.String" MaxLength="12" sap:display-format="UpperCase" sap:label="ID de ordem"/>
+                <Property Name="s_txcode" Type="Edm.String" MaxLength="2" sap:display-format="UpperCase" sap:label="Código de imposto" sap:quickinfo="Código do IVA"/>
+                <Property Name="s_status" Type="Edm.Byte" sap:label="Status" sap:value-list="standard"/>
+                <Property Name="status" Type="Edm.String" MaxLength="1"/>
+                <Property Name="s_offat" Type="Edm.String" MaxLength="1" sap:display-format="UpperCase" sap:label="Tp.cta.contrap." sap:quickinfo="Tipo de conta de contrapartida"/>
+                <Property Name="s_conta" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="ACC" sap:quickinfo="Área de contabilidade de custos"/>
+                <Property Name="s_fintr" Type="Edm.String" MaxLength="3" sap:display-format="UpperCase" sap:label="Tp.trans.financeira" sap:quickinfo="Tipo de transação financeira"/>
+                <Property Name="s_refdt" Type="Edm.String" MaxLength="5" sap:display-format="UpperCase" sap:label="Tipo doc.referência" sap:quickinfo="Tipo do documento de referência"/>
+                <Property Name="s_logsy" Type="Edm.String" MaxLength="10"/>
+                <Property Name="s_refdc" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Contexto doc.ref." sap:quickinfo="Contexto de documento de referência"/>
+                <Property Name="s_refdg" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Grupo PIs doc.ref." sap:quickinfo="Grupo de partidas individuais de documento de referência"/>
+                <Property Name="s_trxsi" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Suboperação" sap:quickinfo="Documento parcial a ser saldado para zero"/>
+                <Property Name="s_rvref" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Org.estorno" sap:quickinfo="Estorno: organizações de referência do documento a estornar"/>
+                <Property Name="s_rvdoc" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Nº ref.estorno" sap:quickinfo="Estorno: Nº documento de referência do documento a estornar"/>
+                <Property Name="s_isset" Type="Edm.Boolean" sap:display-format="UpperCase" sap:label="Está liquidando" sap:quickinfo="Código: item está liquidando ou transferindo outro item"/>
+                <Property Name="s_isstl" Type="Edm.Boolean" sap:display-format="UpperCase" sap:label="Está liquidado" sap:quickinfo="Código: item está liquidado ou transferido"/>
+                <Property Name="s_prdct" Type="Edm.String" MaxLength="5" sap:display-format="UpperCase" sap:label="Trans.ref.precedente" sap:quickinfo="Transação de referência do documento precedente"/>
+                <Property Name="s_prdco" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="UO ref.doc.preced." sap:quickinfo="Unidades organizacionais de referência documento precedente"/>
+                <Property Name="s_prddo" Type="Edm.String" MaxLength="10"/>
+                <Property Name="s_prddi" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Item doc.ref.prec." sap:quickinfo="Item do documento de referência precedente"/>
+                <Property Name="s_prjcc" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Empresa da partida individual precedente"/>
+                <Property Name="s_prdji" Type="Edm.String" MaxLength="6" sap:display-format="UpperCase" sap:label="Item da partida individual precedente"/>
+                <Property Name="s_srdct" Type="Edm.String" MaxLength="5" sap:display-format="UpperCase" sap:label="Tipo doc.origem" sap:quickinfo="Tipo de documento de origem"/>
+                <Property Name="s_srdci" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Item doc.origem" sap:quickinfo="Item no documento de origem"/>
+                <Property Name="s_srdcs" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Subitem doc.origem" sap:quickinfo="Subitem no documento de origem"/>
+                <Property Name="s_iscom" Type="Edm.Boolean" sap:display-format="UpperCase" sap:label="Compromisso" sap:quickinfo="Código: compromisso"/>
+                <Property Name="s_jriei" Type="Edm.String" MaxLength="1" sap:display-format="UpperCase" sap:label="Motivo obsolescência" sap:quickinfo="Motivo por que esse item é obsoleto"/>
+                <Property Name="s_jpecr" Type="Edm.Guid" sap:label="UUID exec.fechamento" sap:quickinfo="UUID da execução de fechamento financeiro"/>
+                <Property Name="s_orgch" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Modificação organizacional"/>
+                <Property Name="s_funca" Type="Edm.String" MaxLength="16" sap:display-format="UpperCase" sap:label="Área funcional"/>
+                <Property Name="s_partf" Type="Edm.String" MaxLength="16" sap:display-format="UpperCase" sap:label="AF do parceiro" sap:quickinfo="Área funcional do parceiro"/>
+                <Property Name="s_baltr" Type="Edm.String" MaxLength="5" sap:label="Moeda trans.saldo" sap:quickinfo="Saldo moeda de transação" sap:semantics="currency-code"/>
+                <Property Name="s_amtbt" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.na MdaTransSld." sap:quickinfo="Montante na moeda de transação do saldo"/>
+                <Property Name="GLRecordType" Type="Edm.String" MaxLength="1" sap:display-format="UpperCase" sap:label="Tipo registro" sap:quickinfo="Tipo de registro"/>
+                <Property Name="ChartOfAccounts" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Plano de contas"/>
+                <Property Name="ControllingArea" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="ACC" sap:quickinfo="Área de contabilidade de custos"/>
+                <Property Name="FinancialTransactionType" Type="Edm.String" MaxLength="3" sap:display-format="UpperCase" sap:label="Tp.trans.financeira" sap:quickinfo="Tipo de transação financeira"/>
+                <Property Name="BusinessTransactionType" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Tipo trans.comercial" sap:quickinfo="Tipo de transação comercial"/>
+                <Property Name="ControllingBusTransacType" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Operação" sap:quickinfo="Operação CO"/>
+                <Property Name="ReferenceDocumentContext" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Contexto doc.ref." sap:quickinfo="Contexto de documento de referência"/>
+                <Property Name="ReferenceDocumentItemGroup" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Grupo PIs doc.ref." sap:quickinfo="Grupo de partidas individuais de documento de referência"/>
+                <Property Name="TransactionSubitem" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Suboperação" sap:quickinfo="Documento parcial a ser saldado para zero"/>
+                <Property Name="ReversalReferenceDocumentCntxt" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Org.estorno" sap:quickinfo="Estorno: organizações de referência do documento a estornar"/>
+                <Property Name="IsSettlement" Type="Edm.Boolean" sap:display-format="UpperCase" sap:label="Está liquidando" sap:quickinfo="Código: item está liquidando ou transferindo outro item"/>
+                <Property Name="IsSettled" Type="Edm.Boolean" sap:display-format="UpperCase" sap:label="Está liquidado" sap:quickinfo="Código: item está liquidado ou transferido"/>
+                <Property Name="PredecessorReferenceDocType" Type="Edm.String" MaxLength="5" sap:display-format="UpperCase" sap:label="Trans.ref.precedente" sap:quickinfo="Transação de referência do documento precedente"/>
+                <Property Name="PredecessorReferenceDocCntxt" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="UO ref.doc.preced." sap:quickinfo="Unidades organizacionais de referência documento precedente"/>
+                <Property Name="PredecessorReferenceDocItem" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Item doc.ref.prec." sap:quickinfo="Item do documento de referência precedente"/>
+                <Property Name="PrdcssrJournalEntryCompanyCode" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Empresa da partida individual precedente"/>
+                <Property Name="PredecessorJournalEntryItem" Type="Edm.String" MaxLength="6" sap:display-format="UpperCase" sap:label="Item da partida individual precedente"/>
+                <Property Name="SourceReferenceDocumentType" Type="Edm.String" MaxLength="5" sap:display-format="UpperCase" sap:label="Tipo doc.origem" sap:quickinfo="Tipo de documento de origem"/>
+                <Property Name="SourceReferenceDocumentCntxt" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="UO documento origem" sap:quickinfo="Unidade organizacional do documento de origem"/>
+                <Property Name="SourceReferenceDocumentItem" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Item doc.origem" sap:quickinfo="Item no documento de origem"/>
+                <Property Name="SourceReferenceDocSubitem" Type="Edm.String" MaxLength="6" sap:display-format="NonNegative" sap:label="Subitem doc.origem" sap:quickinfo="Subitem no documento de origem"/>
+                <Property Name="IsCommitment" Type="Edm.Boolean" sap:display-format="UpperCase" sap:label="Compromisso" sap:quickinfo="Código: compromisso"/>
+                <Property Name="JrnlEntryItemObsoleteReason" Type="Edm.String" MaxLength="1" sap:display-format="UpperCase" sap:label="Motivo obsolescência" sap:quickinfo="Motivo por que esse item é obsoleto"/>
+                <Property Name="JrnlPeriodEndClosingRunLogUUID" Type="Edm.Guid" sap:label="UUID exec.fechamento" sap:quickinfo="UUID da execução de fechamento financeiro"/>
+                <Property Name="OrganizationalChange" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Modificação organizacional"/>
+                <Property Name="FunctionalArea" Type="Edm.String" MaxLength="16" sap:display-format="UpperCase" sap:label="Área funcional"/>
+                <Property Name="BusinessArea" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Divisão"/>
+                <Property Name="PartnerFunctionalArea" Type="Edm.String" MaxLength="16" sap:display-format="UpperCase" sap:label="AF do parceiro" sap:quickinfo="Área funcional do parceiro"/>
+                <Property Name="PartnerBusinessArea" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Divisão do parceiro"/>
+                <Property Name="BalanceTransactionCurrency" Type="Edm.String" MaxLength="5" sap:label="Moeda trans.saldo" sap:quickinfo="Saldo moeda de transação" sap:semantics="currency-code"/>
+                <Property Name="AmountInBalanceTransacCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.na MdaTransSld." sap:quickinfo="Montante na moeda de transação do saldo"/>
+                <Property Name="TransactionCurrency" Type="Edm.String" MaxLength="5" sap:label="Moeda da transação" sap:semantics="currency-code"/>
+                <Property Name="AmountInTransactionCurrency" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.moeda transação" sap:quickinfo="Montante na moeda de transação"/>
+                <Property Name="CompanyCodeCurrency" Type="Edm.String" MaxLength="5" sap:label="Moeda da empresa" sap:semantics="currency-code"/>
+                <Property Name="AmountInCompanyCodeCurrency" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.moeda empresa" sap:quickinfo="Montante em moeda da empresa"/>
+                <Property Name="GlobalCurrency" Type="Edm.String" MaxLength="5" sap:label="Moeda do relatório" sap:semantics="currency-code"/>
+                <Property Name="AmountInGlobalCurrency" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.moeda relat." sap:quickinfo="Montante em moeda do relatório"/>
+                <Property Name="FreeDefinedCurrency1" Type="Edm.String" MaxLength="5" sap:label="Moeda def.livrem.1" sap:quickinfo="Moeda definida livremente 1" sap:semantics="currency-code"/>
+                <Property Name="AmountInFreeDefinedCurrency1" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante em MDF 1" sap:quickinfo="Montante em moeda definida livremente 1"/>
+                <Property Name="FreeDefinedCurrency2" Type="Edm.String" MaxLength="5" sap:label="Moeda def.livrem.2" sap:quickinfo="Moeda definida livremente 2" sap:semantics="currency-code"/>
+                <Property Name="AmountInFreeDefinedCurrency2" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante em MDF 2" sap:quickinfo="Montante em moeda definida livremente 2"/>
+                <Property Name="FreeDefinedCurrency3" Type="Edm.String" MaxLength="5" sap:label="Moeda def.livrem.3" sap:quickinfo="Moeda definida livremente 3" sap:semantics="currency-code"/>
+                <Property Name="AmountInFreeDefinedCurrency3" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante em MDL 3" sap:quickinfo="Montante em moeda definida livremente 3"/>
+                <Property Name="FreeDefinedCurrency4" Type="Edm.String" MaxLength="5" sap:label="Moeda def.livrem.4" sap:quickinfo="Moeda definida livremente 4" sap:semantics="currency-code"/>
+                <Property Name="AmountInFreeDefinedCurrency4" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante em MDL 4" sap:quickinfo="Montante em moeda definida livremente 4"/>
+                <Property Name="FreeDefinedCurrency5" Type="Edm.String" MaxLength="5" sap:label="Moeda def.livrem.5" sap:quickinfo="Moeda definida livremente 5" sap:semantics="currency-code"/>
+                <Property Name="AmountInFreeDefinedCurrency5" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante em MDL 5" sap:quickinfo="Montante em moeda definida livremente 5"/>
+                <Property Name="FreeDefinedCurrency6" Type="Edm.String" MaxLength="5" sap:label="Moeda def.livrem.6" sap:quickinfo="Moeda definida livremente 6" sap:semantics="currency-code"/>
+                <Property Name="AmountInFreeDefinedCurrency6" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante em MDL 6" sap:quickinfo="Montante em moeda definida livremente 6"/>
+                <Property Name="FreeDefinedCurrency7" Type="Edm.String" MaxLength="5" sap:label="Moeda def.livrem.7" sap:quickinfo="Moeda definida livremente 7" sap:semantics="currency-code"/>
+                <Property Name="AmountInFreeDefinedCurrency7" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante em MDL 7" sap:quickinfo="Montante em moeda definida livremente 7"/>
+                <Property Name="FreeDefinedCurrency8" Type="Edm.String" MaxLength="5" sap:label="Moeda def.livrem.8" sap:quickinfo="Moeda definida livremente 8" sap:semantics="currency-code"/>
+                <Property Name="AmountInFreeDefinedCurrency8" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante em MDL 8" sap:quickinfo="Montante em moeda definida livremente 8"/>
+                <Property Name="FixedAmountInGlobalCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="MontFixo em MdaGlbl." sap:quickinfo="Montante fixo em moeda global"/>
+                <Property Name="GrpValnFixedAmtInGlobCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="MontFxAvGrpEmpMoeGl." sap:quickinfo="Montante fixo avaliação grupo empresas em moeda global"/>
+                <Property Name="PrftCtrValnFxdAmtInGlobCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="MontFx.AvCenL.MoeGl." sap:quickinfo="Montante fixo da avaliação do centro lucro em moeda global"/>
+                <Property Name="FixedAmountInCoCodeCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Montante fixo em moeda da empresa"/>
+                <Property Name="TotalPriceVarcInGlobalCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Desvio prç.total MG" sap:quickinfo="Desvio de preço total em moeda global"/>
+                <Property Name="GrpValnTotPrcVarcInGlobCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Dsv.PTot.AG moed.gl." sap:quickinfo="Desvio preço total avaliação grupo empresas em moeda global"/>
+                <Property Name="PrftCtrValnTotPrcVarcInGlbCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Dsv.prç.tot.av.CL MG" sap:quickinfo="Desvio do preço total avaliação centro lucro em moeda global"/>
+                <Property Name="FixedPriceVarcInGlobalCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Desvio preço fixo MG" sap:quickinfo="Desvio de preço fixo na moeda global"/>
+                <Property Name="GrpValnFixedPrcVarcInGlobCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Desv.AGEmp.PF MG" sap:quickinfo="Desvio preço fixo avaliação grupo empresas em moeda global"/>
+                <Property Name="PrftCtrValnFxdPrcVarcInGlbCrcy" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Dsv.PrçFx.aval.CL MG" sap:quickinfo="Desvio preço fixo avaliação centro lucro em moeda global"/>
+                <Property Name="ControllingObjectCurrency" Type="Edm.String" MaxLength="5" sap:label="Moeda do objeto CO" sap:semantics="currency-code"/>
+                <Property Name="AmountInObjectCurrency" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.moeda objeto" sap:quickinfo="Montante em moeda de objeto CO"/>
+                <Property Name="GrantCurrency" Type="Edm.String" MaxLength="5" sap:label="Moeda subsídio públ." sap:quickinfo="Moeda do subsídio público" sap:semantics="currency-code"/>
+                <Property Name="AmountInGrantCurrency" Type="Edm.Decimal" Precision="24" Scale="3" sap:label="Mont.moeda sub.públ." sap:quickinfo="Montante subsídio público em moeda do subsídio público"/>
+                <Property Name="Quantity" Type="Edm.Decimal" Precision="23" Scale="3" sap:label="Quantidade"/>
+                <Property Name="FixedQuantity" Type="Edm.Decimal" Precision="23" Scale="3" sap:label="Quantidade fixa"/>
+                <Property Name="ValuationQuantity" Type="Edm.Decimal" Precision="23" Scale="3" sap:label="Quantidade avaliação" sap:quickinfo="Quantidade de avaliação"/>
+                <Property Name="ValuationFixedQuantity" Type="Edm.Decimal" Precision="23" Scale="3" sap:label="Qtd.avaliação fix." sap:quickinfo="Quantidade de avaliação fixada"/>
+                <Property Name="DebitCreditCode" Type="Edm.String" MaxLength="1" sap:display-format="UpperCase" sap:label="Cód.débito/crédito" sap:quickinfo="Código de débito/crédito"/>
+                <Property Name="FiscalPeriod" Type="Edm.String" MaxLength="3" sap:display-format="NonNegative" sap:label="Período contábil"/>
+                <Property Name="FiscalYearVariant" Type="Edm.String" MaxLength="2" sap:display-format="UpperCase" sap:label="Variante exercício" sap:quickinfo="Variante de exercício"/>
+                <Property Name="FiscalYearPeriod" Type="Edm.String" MaxLength="7" sap:display-format="NonNegative" sap:label="Per.exerc.fiscal" sap:quickinfo="Período do exercício fiscal"/>
+                <Property Name="OffsettingAccount" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Cta.contrapartida" sap:quickinfo="Conta de contrapartida"/>
+                <Property Name="OffsettingAccountType" Type="Edm.String" MaxLength="1" sap:display-format="UpperCase" sap:label="Tp.cta.contrap." sap:quickinfo="Tipo de conta de contrapartida"/>
+                <Property Name="OffsettingChartOfAccounts" Type="Edm.String" MaxLength="4" sap:display-format="UpperCase" sap:label="Plano de contas de compensação"/>
+                <Property Name="Supplier" Type="Edm.String" MaxLength="10" sap:display-format="UpperCase" sap:label="Fornecedor"/>
+            </EntityType>
+            <EntityType Name="Z_FI_LEDGER_VH_02Type" sap:label="Value Help do campo  s_ledger" sap:value-list="true" sap:content-version="1">
+                <Key>
+                    <PropertyRef Name="s_leadr"/>
+                </Key>
+                <Property Name="s_leadr" Type="Edm.String" Nullable="false" MaxLength="2" sap:display-format="UpperCase" sap:label="Ledger fonte"/>
+            </EntityType>
+            <EntityContainer Name="Z_FI_I_GLACCOUNTLINEITEM_2_CDS_Entities" m:IsDefaultEntityContainer="true" sap:message-scope-supported="true" sap:supported-formats="atom json xlsx">
+                <EntitySet Name="ZI_READ_DOMAIN_03" EntityType="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.ZI_READ_DOMAIN_03Type" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="Z_FI_COMPANY_VH_03" EntityType="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_COMPANY_VH_03Type" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="Z_FI_GLACCOUNT_VH_03" EntityType="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_GLACCOUNT_VH_03Type" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="Z_FI_I_GLACCOUNTLINEITEM_2" EntityType="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_I_GLACCOUNTLINEITEM_2Type" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+                <EntitySet Name="Z_FI_LEDGER_VH_02" EntityType="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_LEDGER_VH_02Type" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:content-version="1"/>
+            </EntityContainer>
+            <Annotations Target="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_I_GLACCOUNTLINEITEM_2Type/s_ledger" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="Value Help do campo s_ledger"/>
+                        <PropertyValue Property="CollectionPath" String="Z_FI_LEDGER_VH_02"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_ledger"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_leadr"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_glact"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_glact"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_compy"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_compy"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_I_GLACCOUNTLINEITEM_2Type/s_compy" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="Value Help do campo s_compy"/>
+                        <PropertyValue Property="CollectionPath" String="Z_FI_COMPANY_VH_03"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_compy"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_compy"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_glact"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_glact"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_ledger"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_ledger"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="CompanyName"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="City"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="Country"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="Currency"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="Language"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_I_GLACCOUNTLINEITEM_2Type/s_glact" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="Value Help do campo s_glact"/>
+                        <PropertyValue Property="CollectionPath" String="Z_FI_GLACCOUNT_VH_03"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_glact"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_glact"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_compy"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_compy"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_ledger"/>
+                                    <PropertyValue Property="ValueListProperty" String="s_ledger"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_I_GLACCOUNTLINEITEM_2Type/s_status" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ValueList">
+                    <Record>
+                        <PropertyValue Property="Label" String="Domínio Read"/>
+                        <PropertyValue Property="CollectionPath" String="ZI_READ_DOMAIN_03"/>
+                        <PropertyValue Property="SearchSupported" Bool="false"/>
+                        <PropertyValue Property="Parameters">
+                            <Collection>
+                                <Record Type="Common.ValueListParameterInOut">
+                                    <PropertyValue Property="LocalDataProperty" PropertyPath="s_status"/>
+                                    <PropertyValue Property="ValueListProperty" String="Status"/>
+                                </Record>
+                                <Record Type="Common.ValueListParameterDisplayOnly">
+                                    <PropertyValue Property="ValueListProperty" String="Text"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_I_GLACCOUNTLINEITEM_2_CDS_Entities" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Common.ApplyMultiUnitBehaviorForSortingAndFiltering" Bool="true"/>
+                <Annotation Term="Aggregation.ApplySupported">
+                    <Record>
+                        <PropertyValue Property="Transformations">
+                            <Collection>
+                                <String>aggregate</String>
+                                <String>groupby</String>
+                                <String>filter</String>
+                            </Collection>
+                        </PropertyValue>
+                        <PropertyValue Property="Rollup" EnumMember="None"/>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <Annotations Target="Z_FI_I_GLACCOUNTLINEITEM_2_CDS.Z_FI_I_GLACCOUNTLINEITEM_2_CDS_Entities/Z_FI_I_GLACCOUNTLINEITEM_2" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+                <Annotation Term="Capabilities.FilterRestrictions">
+                    <Record>
+                        <PropertyValue Property="FilterExpressionRestrictions">
+                            <Collection>
+                                <Record>
+                                    <PropertyValue Property="Property" PropertyPath="s_psdat"/>
+                                    <PropertyValue Property="AllowedExpressions" String="SingleRange"/>
+                                </Record>
+                            </Collection>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+            </Annotations>
+            <atom:link rel="self" href="https://vhprjs4dci.hec.petroriosa.com.br:44300/sap/opu/odata/sap/Z_FI_I_GLACCOUNTLINEITEM_2_CDS/$metadata" xmlns:atom="http://www.w3.org/2005/Atom"/>
+            <atom:link rel="latest-version" href="https://vhprjs4dci.hec.petroriosa.com.br:44300/sap/opu/odata/sap/Z_FI_I_GLACCOUNTLINEITEM_2_CDS/$metadata" xmlns:atom="http://www.w3.org/2005/Atom"/>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>
