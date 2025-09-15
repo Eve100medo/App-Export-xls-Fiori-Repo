@@ -1,0 +1,34 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:smartfilterbar="sap.ui.comp.smartfilterbar" xmlns:core="sap.ui.core">
+<smartfilterbar:ControlConfiguration groupId="_BASIC" index="20"
+    key="status"
+    label="Status"
+    visibleInAdvancedArea="true">
+    <smartfilterbar:customControl>
+        <ComboBox id="Status">
+        <core:Item key="2" text="Todos itens"/>
+        <core:Item key="1" text="Partidas em aberto"/>
+        <core:Item key="3" text="Itens compensados"/>
+       
+    </ComboBox>
+    </smartfilterbar:customControl>
+    
+</smartfilterbar:ControlConfiguration>
+
+
+<smartfilterbar:ControlConfiguration groupId="_BASIC" index="10"
+    key="ledger"
+    label="Ledger"
+    visibleInAdvancedArea="true">
+    <smartfilterbar:customControl>
+        <ComboBox id="Ledger" selectedKey="0L">
+        <core:Item key="0E" text="0E (Compromisso/entrada de ordem)"/>
+        <core:Item key="0L" text="0L (Ledger 0L)"/>
+        <core:Item key="L1" text="L1 (Ledger LUX GAAP)"/>
+        <core:Item key="L2" text="L2 (Ledger IFRS 16)"/>
+        <core:Item key="L3" text="L3 (Ledger Gerencial)"/>
+    </ComboBox>
+    </smartfilterbar:customControl>
+</smartfilterbar:ControlConfiguration>
+
+
+</core:FragmentDefinition>
